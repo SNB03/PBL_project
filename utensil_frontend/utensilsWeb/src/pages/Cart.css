@@ -1,0 +1,156 @@
+/* src/pages/Cart.css */
+
+.cart-container {
+  padding: 40px 5%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.cart-container h2 {
+  color: #2c3e50;
+  margin-bottom: 30px;
+  border-bottom: 2px solid #eee;
+  padding-bottom: 10px;
+}
+
+.empty-cart {
+  text-align: center;
+  padding: 50px 0;
+}
+
+.continue-shopping-btn {
+  display: inline-block;
+  margin-top: 20px;
+  padding: 12px 24px;
+  background-color: #d35400;
+  color: white;
+  text-decoration: none;
+  border-radius: 5px;
+  font-weight: bold;
+}
+
+.cart-content {
+  display: flex;
+  gap: 40px;
+  align-items: flex-start;
+}
+
+/* Items List */
+.cart-items-section {
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.cart-item {
+  display: flex;
+  align-items: center;
+  background: white;
+  padding: 15px 20px;
+  border-radius: 8px;
+  border: 1px solid #eee;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+}
+
+.item-icon {
+  font-size: 2.5rem;
+  margin-right: 20px;
+}
+
+.item-details {
+  flex: 1;
+}
+
+.item-details h4 {
+  margin: 0 0 5px 0;
+  color: #2c3e50;
+}
+
+.item-details p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #888;
+}
+
+.item-price {
+  font-weight: bold;
+  font-size: 1.2rem;
+  color: #2c3e50;
+  margin-right: 20px;
+}
+
+.remove-btn {
+  background: none;
+  border: none;
+  color: #e74c3c;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.remove-btn:hover {
+  transform: scale(1.2);
+}
+
+/* Summary Section */
+.cart-summary-section {
+  flex: 1;
+  background: #f9f9f9;
+  padding: 25px;
+  border-radius: 8px;
+  border: 1px solid #eee;
+  position: sticky;
+  top: 100px;
+}
+
+.cart-summary-section h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #2c3e50;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 15px;
+  color: #555;
+}
+
+.total-row {
+  border-top: 2px solid #ddd;
+  padding-top: 15px;
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: #d35400;
+}
+
+.checkout-btn {
+  width: 100%;
+  padding: 15px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 20px;
+  transition: background-color 0.3s ease;
+}
+
+.login-prompt {
+  background-color: #2c3e50;
+  color: white;
+}
+
+.login-prompt:hover {
+  background-color: #1a252f;
+}
+
+.place-order {
+  background-color: #d35400;
+  color: white;
+}
+
+.place-order:hover {
+  background-color: #e67e22;
+}

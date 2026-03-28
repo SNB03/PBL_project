@@ -1,0 +1,231 @@
+/* src/pages/CookerShop.css */
+
+.cooker-shop-container {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 40px 5%;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.shop-header {
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 20px;
+  margin-bottom: 30px;
+}
+
+.shop-header h1 {
+  color: #0f172a;
+  margin: 0 0 5px 0;
+}
+
+.shop-header p {
+  color: #64748b;
+  margin: 0;
+}
+
+/* --- Layout: Sidebar + Grid --- */
+.shop-layout {
+  display: flex;
+  gap: 40px;
+  align-items: flex-start;
+}
+
+/* --- Filter Sidebar --- */
+.filter-sidebar {
+  flex: 0 0 260px; /* Fixed width sidebar */
+  background: #f8fafc;
+  padding: 25px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  position: sticky;
+  top: 90px;
+}
+
+.filter-sidebar h3 {
+  margin: 0 0 20px 0;
+  color: #0f172a;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.clear-btn {
+  background: none;
+  border: none;
+  color: #e74c3c;
+  font-size: 0.85rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.clear-btn:hover { text-decoration: underline; }
+
+.filter-group {
+  margin-bottom: 25px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.filter-group:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.filter-group h4 {
+  margin: 0 0 10px 0;
+  color: #334155;
+  font-size: 0.95rem;
+}
+
+.dep-text {
+  font-size: 0.75rem;
+  color: #d35400;
+  font-weight: normal;
+}
+
+.filter-group select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.radio-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+  color: #475569;
+  cursor: pointer;
+}
+
+/* --- Product Results Area --- */
+.product-results {
+  flex: 1;
+}
+
+.results-header {
+  margin-bottom: 20px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.cooker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 25px;
+}
+
+/* --- Product Cards --- */
+.cooker-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.cooker-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+}
+
+.cooker-img-box {
+  background-color: #f1f5f9;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.cooker-emoji {
+  font-size: 5rem;
+}
+
+.size-badge {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background-color: #2c3e50;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-weight: bold;
+  font-size: 0.85rem;
+}
+
+.cooker-info {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.brand-name {
+  color: #d35400;
+  font-weight: 800;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+
+.cooker-info h3 {
+  margin: 0 0 10px 0;
+  font-size: 1.2rem;
+  color: #0f172a;
+}
+
+.attribute-tags {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+.tag {
+  background-color: #f1f5f9;
+  color: #475569;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.cooker-desc {
+  color: #64748b;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0 0 20px 0;
+  flex: 1;
+}
+
+.cooker-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+}
+
+.price {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+/* Responsive adjustment for mobile */
+@media (max-width: 768px) {
+  .shop-layout {
+    flex-direction: column;
+  }
+  .filter-sidebar {
+    width: 100%;
+    position: static;
+  }
+}
