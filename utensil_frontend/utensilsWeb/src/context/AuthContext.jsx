@@ -1,47 +1,29 @@
-// src/context/AuthContext.jsx
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
-// 1. Create the Context
-export const AuthContext = createContext();
+const AuthContext = createContext();
 
-// 2. Custom hook so other files can easily grab auth data
 export const useAuth = () => useContext(AuthContext);
 
-// 3. The Provider that wraps our app
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [role, setRole] = useState(null); // 'customer', 'admin', or null
+  const [user, setUser] = useState(() => {
+    // Check if a user is already logged in when the app loads
+    const savedUser = localStorage.getItem('utensilUser');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
 
-  // When the app loads, check if they are already logged in via localStorage
-  useEffect(() => {
-    const sessionRole = localStorage.getItem('current_session');
-    const savedUser = JSON.parse(localStorage.getItem('utensil_user'));
+  // Automatically derive the role from the user object
+  const role = user ? user.role.toLowerCase() : 'guest';
 
-    if (sessionRole === 'customer' && savedUser) {
-      setRole('customer');
-      setUser(savedUser);
-    } else if (sessionRole === 'admin') {
-      setRole('admin');
-      setUser({ fullName: 'Admin' }); // Mock admin user object
-    }
-  }, []);
-
-  // Login function to update state and localStorage simultaneously
-  const login = (userData, userRole) => {
-    localStorage.setItem('current_session', userRole);
-    if (userData) {
-      localStorage.setItem('utensil_user', JSON.stringify(userData));
-    }
-    setRole(userRole);
-    setUser(userData || { fullName: 'Admin' });
+  const login = (userData) => {
+    setUser(userData);
+    localStorage.setItem('utensilUser', JSON.stringify(userData));
   };
 
-  // Logout function to clear everything
   const logout = () => {
-    localStorage.removeItem('current_session');
-    localStorage.removeItem('utensil_user');
-    setRole(null);
     setUser(null);
+    localStorage.removeItem('utensilUser');
+    // Optional: Also clear the cart on logout!
+    localStorage.removeItem('utensilCart');
   };
 
   return (

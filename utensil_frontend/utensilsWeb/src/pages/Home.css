@@ -331,3 +331,18 @@
   border-color: #2c3e50;
   color: #d35400; /* Subtle color shift to match theme */
 }
+/* Add to the bottom of src/pages/Home.css */
+
+.clickable-product-link {
+  text-decoration: none;
+  color: inherit;
+  display: block; /* Ensures the click area takes up the full space */
+}
+
+.clickable-product-link h4 {
+  transition: color 0.2s ease;
+}
+
+.clickable-product-link:hover h4 {
+  color: #d35400; /* Makes the title turn orange when hovered */
+}

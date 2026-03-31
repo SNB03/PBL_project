@@ -1,116 +1,107 @@
 // src/pages/Login.jsx
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext'; // Importing the Context Hook
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import './Auth.css';
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  const [credentials, setCredentials] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const navigate = useNavigate();
-  const { login } = useAuth(); // MUST be inside the component
+  const location = useLocation();
+  const { login } = useAuth();
 
-  const handleLogin = async (e) => {
+  const handleChange = (e) => {
+    setCredentials({ ...credentials, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setIsLoading(true);
 
-    // --- MOCK ADMIN LOGIN ---
-    if (email === 'admin@utensil.com' && password === 'admin123') {
-      login(null, 'admin');
-      navigate('/');
-      return;
-    }
-
-    // --- REAL CUSTOMER LOGIN (via Spring Boot) ---
     try {
-      const response = await fetch('http://localhost:8080/api/auth/login', {
+      const res = await fetch('http://localhost:8080/api/auth/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: email,
-          password: password
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(credentials)
       });
 
-      if (response.ok) {
-        const userData = await response.json();
+      if (res.ok) {
+        const userData = await res.json();
 
-        login(userData, 'customer'); // Send the user data to our global Context
-        navigate('/');
+        // 1. Save user to global context and localStorage
+        login(userData);
+
+        // 2. Role-Based Routing Magic
+        if (userData.role === 'ADMIN') {
+          navigate('/admin');
+        } else if (userData.role === 'DELIVERY') {
+          navigate('/delivery');
+        } else {
+          // If they came from the Cart page, send them back there! Otherwise, go Home.
+          const destination = location.state?.from || '/';
+          navigate(destination);
+        }
       } else {
-        setError('Invalid email or password. Please try again.');
+        const errData = await res.json();
+        setError(errData.error || 'Invalid email or password.');
       }
     } catch (err) {
-      console.error("Error connecting to backend:", err);
-      setError("Could not connect to the server. Is Spring Boot running?");
+      setError('Server error. Ensure your Spring Boot backend is running.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <div className="auth-container">
-      <div className="auth-card">
-        <h2>Welcome Back</h2>
-        <p>Log in to your account to continue.</p>
+      <div className="auth-card animate-slide-up">
 
-        {error && <div style={{ color: 'red', marginBottom: '15px', textAlign: 'center', fontWeight: 'bold' }}>{error}</div>}
-
-        <button className="social-btn google-btn">
-          <img
-            src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg"
-            alt="Google logo"
-            className="google-icon"
-          />
-          Log in with Google
-        </button>
-
-        <div className="auth-divider">
-          <span>OR LOG IN WITH EMAIL</span>
+          <Link to="/" className="auth-back-link">
+                    ← Back to Store
+                  </Link>
+        <div className="auth-header">
+          <h2 onClick={() => navigate('/')} style={{cursor: 'pointer'}}>Utensil<span>Pro</span></h2>
+          <p>Welcome back! Please enter your details.</p>
         </div>
 
-        <form className="auth-form" onSubmit={handleLogin}>
+        {error && <div className="auth-error">⚠️ {error}</div>}
+
+        <form className="auth-form" onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="email">Email Address</label>
+            <label>Email Address</label>
             <input
-              type="email"
-              id="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              type="text"
+              name="email"
+              placeholder="you@example.com or 9876543210"
+              value={credentials.email}
+              onChange={handleChange}
               required
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="password">Password</label>
-            <div className="password-wrapper">
-              <input
-                type={showPassword ? "text" : "password"}
-                id="password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-              <button
-                type="button"
-                className="eye-btn"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? "🙈" : "👁️"}
-              </button>
-            </div>
+            <label>Password</label>
+            <input
+              type="password"
+              name="password"
+              placeholder="••••••••"
+              value={credentials.password}
+              onChange={handleChange}
+              required
+            />
           </div>
 
-          <button type="submit" className="auth-submit-btn">Login</button>
+          <button type="submit" className="btn-auth-primary" disabled={isLoading}>
+            {isLoading ? 'Signing In...' : 'Sign In'}
+          </button>
         </form>
 
         <div className="auth-footer">
-          <p>Don't have an account? <Link to="/register">Sign up here</Link></p>
+          <p>Don't have an account? <Link to="/register">Sign up for free</Link></p>
         </div>
       </div>
     </div>

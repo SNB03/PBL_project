@@ -1,169 +1,188 @@
-// src/pages/Register.jsx
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import './Auth.css';
 
 const Register = () => {
-  // State for UI toggles
+  const navigate = useNavigate();
+
+  // Step Management
+  const [step, setStep] = useState(1); // 1 = Details, 2 = OTP
+
+  // Form Data
+  const [formData, setFormData] = useState({ name: '', email: '', phone: '', password: '', confirmPassword: '', otp: '' });
+
+  // UI States
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
-  // 1. Make the function async
-    const handleSignUp = async (e) => {
-      e.preventDefault();
+  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
-      // Grab the values from the form
-      const fullName = document.getElementById('fullName').value;
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-      const confirmPassword = document.getElementById('confirmPassword').value;
+  // STEP 1: VALIDATE AND REQUEST OTP
+  const handleSendOTP = async (e) => {
+    e.preventDefault();
+    setError('');
 
-      if (password !== confirmPassword) {
-        alert("Passwords do not match!");
-        return;
+    if (formData.password !== formData.confirmPassword) {
+      return setError("Passwords do not match!");
+    }
+    if (formData.password.length < 6) {
+      return setError("Password must be at least 6 characters.");
+    }
+
+    setIsLoading(true);
+    try {
+      const res = await fetch('http://localhost:8080/api/auth/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email })
+      });
+
+      if (res.ok) {
+        setStep(2); // Move to OTP screen!
+        alert("OTP sent! Check your Spring Boot console for the code.");
+      } else {
+        const errData = await res.json();
+        setError(errData.error || 'Failed to send OTP.');
       }
+    } catch (err) {
+      setError('Server error. Ensure Spring Boot is running.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-      try {
-        // 2. Call the Spring Boot API
-        const response = await fetch('http://localhost:8080/api/auth/register', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            fullName: fullName,
-            email: email,
-            password: password
-          })
-        });
+  // STEP 2: VERIFY OTP AND REGISTER
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
 
-        // 3. Handle the response
-        if (response.ok) {
-          alert("Account created successfully in the database! You can now log in.");
-          window.location.href = '/login'; // Redirect to login page
-        } else {
-          // If the backend sends a 400 Bad Request (like "Email already taken")
-          const errorMessage = await response.text();
-          alert(`Registration failed: ${errorMessage}`);
-        }
-      } catch (error) {
-        console.error("Error connecting to backend:", error);
-        alert("Could not connect to the server. Is Spring Boot running?");
+    try {
+      const res = await fetch('http://localhost:8080/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData) // Sends name, email, phone, password, AND otp
+      });
+
+      if (res.ok) {
+        alert('🎉 Account verified and created successfully! Please log in.');
+        navigate('/login');
+      } else {
+        const errData = await res.json();
+        setError(errData.error || 'Invalid OTP. Please try again.');
       }
-    };
+    } catch (err) {
+      setError('Server error during registration.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="auth-container">
-      <div className="auth-card">
+      <div className="auth-card animate-slide-up">
+        <Link to="/" className="auth-back-link">← Back to Store</Link>
 
-        {/* STEP 1: Registration Form */}
-        {!isVerifying ? (
-          <>
-            <h2>Create an Account</h2>
-            <p>Join us to shop the best kitchenware.</p>
+        <div className="auth-header">
+          <h2 onClick={() => navigate('/')} style={{cursor: 'pointer'}}>Utensil<span>Pro</span></h2>
+          <p>{step === 1 ? "Create your customer profile." : "Verify your email address."}</p>
+        </div>
 
-            {/* Google Sign Up Button */}
-            <button className="social-btn google-btn">
-              <img
-                src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg"
-                alt="Google logo"
-                className="google-icon"
-              />
-              Continue with Google
-            </button>
+        {error && <div className="auth-error">⚠️ {error}</div>}
 
-            <div className="auth-divider">
-              <span>OR SIGN UP WITH EMAIL</span>
+        {/* --- STEP 1: DETAILS FORM --- */}
+        {step === 1 && (
+          <form className="auth-form" onSubmit={handleSendOTP}>
+            <div className="form-group">
+              <label>Full Name</label>
+              <input type="text" name="name" placeholder="John Doe" value={formData.name} onChange={handleChange} required />
             </div>
 
-            <form className="auth-form" onSubmit={handleSignUp}>
-              <div className="form-group">
-                <label htmlFor="fullName">Full Name</label>
-                <input type="text" id="fullName" placeholder="John Doe" required />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="email">Email Address</label>
-                <input type="email" id="email" placeholder="Enter your email" required />
-              </div>
-
-              {/* Password Field with Eye Icon */}
-              <div className="form-group">
-                <label htmlFor="password">Password</label>
-                <div className="password-wrapper">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    id="password"
-                    placeholder="Create a password"
-                    required
-                  />
-                  <button
-                    type="button"
-                    className="eye-btn"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? "🙈" : "👁️"}
-                  </button>
-                </div>
-              </div>
-
-              {/* Confirm Password Field with Eye Icon */}
-              <div className="form-group">
-                <label htmlFor="confirmPassword">Confirm Password</label>
-                <div className="password-wrapper">
-                  <input
-                    type={showConfirmPassword ? "text" : "password"}
-                    id="confirmPassword"
-                    placeholder="Confirm your password"
-                    required
-                  />
-                  <button
-                    type="button"
-                    className="eye-btn"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  >
-                    {showConfirmPassword ? "🙈" : "👁️"}
-                  </button>
-                </div>
-              </div>
-
-              <button type="submit" className="auth-submit-btn">Sign Up</button>
-            </form>
-
-            <div className="auth-footer">
-              <p>Already have an account? <Link to="/login">Log in here</Link></p>
+            <div className="form-group">
+              <label>Email Address</label>
+              <input type="email" name="email" placeholder="you@example.com" value={formData.email} onChange={handleChange} required />
             </div>
-          </>
-        ) : (
 
-          /* STEP 2: Email Verification UI */
-          <div className="verification-step">
-            <h2>Verify Your Email</h2>
-            <p>We've sent a 6-digit code to your email address. Please enter it below to verify your account.</p>
+            <div className="form-group">
+              <label>Phone Number</label>
+              <input type="tel" name="phone" placeholder="10-digit mobile number" value={formData.phone} onChange={handleChange} required />
+            </div>
 
-            <form className="auth-form" onSubmit={handleVerification}>
-              <div className="form-group">
-                <label htmlFor="otp">Verification Code</label>
+            <div className="form-group position-relative">
+              <label>Password</label>
+              <div className="password-wrapper" style={{ position: 'relative' }}>
                 <input
-                  type="text"
-                  id="otp"
-                  placeholder="Enter 6-digit code"
-                  maxLength="6"
-                  required
-                  style={{ textAlign: 'center', letterSpacing: '5px', fontSize: '1.2rem' }}
+                  type={showPassword ? "text" : "password"}
+                  name="password" placeholder="Create a strong password"
+                  value={formData.password} onChange={handleChange} required
+                  style={{ width: '100%', paddingRight: '40px' }}
                 />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem' }}>
+                  {showPassword ? "🙈" : "👁️"}
+                </button>
               </div>
-              <button type="submit" className="auth-submit-btn">Verify Account</button>
-            </form>
-
-            <div className="auth-footer">
-              <p>Didn't receive the code? <button className="resend-btn" onClick={() => alert("Code resent!")}>Resend</button></p>
-              <button className="back-btn" onClick={() => setIsVerifying(false)}>Back to Sign Up</button>
             </div>
-          </div>
+
+            <div className="form-group position-relative">
+              <label>Confirm Password</label>
+              <div className="password-wrapper" style={{ position: 'relative' }}>
+                <input
+                  type={showConfirm ? "text" : "password"}
+                  name="confirmPassword" placeholder="Confirm your password"
+                  value={formData.confirmPassword} onChange={handleChange} required
+                  style={{ width: '100%', paddingRight: '40px' }}
+                />
+                <button type="button" onClick={() => setShowConfirm(!showConfirm)} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem' }}>
+                  {showConfirm ? "🙈" : "👁️"}
+                </button>
+              </div>
+            </div>
+
+            <button type="submit" className="btn-auth-primary" disabled={isLoading}>
+              {isLoading ? 'Processing...' : 'Send Verification OTP'}
+            </button>
+          </form>
         )}
 
+        {/* --- STEP 2: OTP FORM --- */}
+        {step === 2 && (
+          <form className="auth-form animate-fade-in" onSubmit={handleRegister}>
+            <div style={{ backgroundColor: '#eff6ff', padding: '15px', borderRadius: '8px', marginBottom: '20px', fontSize: '0.9rem', color: '#1e40af', border: '1px solid #bfdbfe' }}>
+              We've sent a 6-digit verification code to <strong>{formData.email}</strong>.<br/>
+              *(For now, check your Spring Boot console to see the code!)*
+            </div>
+
+            <div className="form-group">
+              <label>Enter 6-Digit OTP</label>
+              <input
+                type="text"
+                name="otp"
+                placeholder="000000"
+                value={formData.otp}
+                onChange={handleChange}
+                required
+                maxLength="6"
+                style={{ fontSize: '1.5rem', letterSpacing: '5px', textAlign: 'center', fontWeight: 'bold' }}
+              />
+            </div>
+
+            <button type="submit" className="btn-auth-primary" disabled={isLoading}>
+              {isLoading ? 'Verifying...' : 'Verify & Create Account'}
+            </button>
+
+            <button type="button" onClick={() => setStep(1)} style={{ width: '100%', background: 'none', border: 'none', color: '#64748b', marginTop: '15px', cursor: 'pointer', fontWeight: 'bold' }}>
+              ← Back to Edit Details
+            </button>
+          </form>
+        )}
+
+        {step === 1 && (
+          <div className="auth-footer">
+            <p>Already have an account? <Link to="/login">Sign In</Link></p>
+          </div>
+        )}
       </div>
     </div>
   );

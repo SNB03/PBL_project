@@ -63,30 +63,35 @@ const Home = () => {
   };
 
   // --- DYNAMIC CARD RENDERER ---
-  const renderProductCard = (product) => (
-    <div key={product.id} className="item-card">
-      <span className="quality-tag">{product.tag}</span>
+    const renderProductCard = (product) => (
+      <div key={product.id} className="item-card">
+        <span className="quality-tag">{product.tag}</span>
 
-      <div className="item-img">
-        {product.img}
-      </div>
+        {/* 1. Make the Image Clickable */}
+        <Link to={`/product/${product.id}`} className="clickable-product-link">
+          <div className="item-img">
+            {product.img}
+          </div>
+        </Link>
 
-      <div className="item-details">
-        <h4>{product.name}</h4>
-        <span className="item-price">₹{product.price}</span>
-      </div>
+        <div className="item-details">
+          {/* 2. Make the Title Clickable */}
+          <Link to={`/product/${product.id}`} className="clickable-product-link">
+            <h4>{product.name}</h4>
+          </Link>
+          <span className="item-price">₹{product.price}</span>
+        </div>
 
-      {/* DUAL BUTTON LAYOUT */}
-      <div className="card-actions">
-        <button className="btn-add-small" onClick={() => handleAddToCart(product)}>
-          Add to Cart
-        </button>
-        <button className="btn-explore" onClick={() => handleExplore(product)}>
-          Explore All
-        </button>
+        <div className="card-actions">
+          <button className="btn-add-small" onClick={() => handleAddToCart(product)}>
+            Add to Cart
+          </button>
+          <button className="btn-explore" onClick={() => handleExplore(product)}>
+            Explore All
+          </button>
+        </div>
       </div>
-    </div>
-  );
+    );
 
   return (
     <div className="local-store-home">
