@@ -1,43 +1,32 @@
 package com.ecommerce.utensils.model;
 
-
 import jakarta.persistence.*;
+import lombok.Data;
 
-@Entity // Tells Spring to create a SQL table for this class
-@Table(name = "users")
+@Data
+@Entity
+@Table(name = "users") // SQL Table
 public class User {
 
-    @Id // Makes this the Primary Key
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // Auto-increments the ID
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false)
-    private String fullName;
+    private String name;
+    @Column(columnDefinition = "TEXT")
+    private String address;
 
-    @Column(nullable = false, unique = true) // Ensures no duplicate emails
+    @Column(nullable = false, unique = true)
     private String email;
 
     @Column(nullable = false)
-    private String password;
+    private String password; // In production, this would be hashed with BCrypt!
 
-    private String role; // "customer" or "admin"
+    private String phone;
 
-    // Default Constructor (Required by JPA)
-    public User() {}
+    @Column(nullable = false)
+    private String role = "CUSTOMER"; // Default role. The admin will have "ADMIN".
 
-    // Getters and Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
 
-    public String getFullName() { return fullName; }
-    public void setFullName(String fullName) { this.fullName = fullName; }
-
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
-
-    public String getPassword() { return password; }
-    public void setPassword(String password) { this.password = password; }
-
-    public String getRole() { return role; }
-    public void setRole(String role) { this.role = role; }
 }
