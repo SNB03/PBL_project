@@ -13,11 +13,25 @@ const ActiveOrders = ({ orders, setOrders }) => {
   const [quickViewProduct, setQuickViewProduct] = useState(null);
   const [isLoadingProduct, setIsLoadingProduct] = useState(false);
 
+  // 👉 NEW: Toast State
+  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
+
+  // 👉 NEW: Toast Helper Function
+  const showToast = (message, type = 'success') => {
+    setToast({ visible: true, message, type });
+    setTimeout(() => {
+      setToast({ visible: false, message: '', type: 'success' });
+    }, 3000);
+  };
+
   useEffect(() => {
     fetch('http://localhost:8080/api/admin/config/staff')
       .then(res => res.json())
       .then(data => setDeliveryStaff(data))
-      .catch(err => console.error("Failed to fetch staff", err));
+      .catch(err => {
+        console.error("Failed to fetch staff", err);
+        showToast("Failed to load delivery staff", "error");
+      });
   }, []);
 
   const formatEnum = (status) => status?.replace(/_/g, ' ').replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.substr(1).toLowerCase());
@@ -31,70 +45,80 @@ const ActiveOrders = ({ orders, setOrders }) => {
     }
   };
 
-  // 👉 FIXED API CALLS (Matching your OrderAdminController)
   const handleOrderStatusUpdate = async (orderId, newStatus) => {
     try {
       const res = await fetch(`http://localhost:8080/api/admin/orders/${orderId}/status?status=${newStatus}`, { method: 'PATCH' });
-      if (res.ok) setOrders(orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
-    } catch (err) { alert("Failed to update status."); }
+      if (res.ok) {
+        setOrders(orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+        showToast(`Order #${orderId.substring(0,6)} marked as ${formatEnum(newStatus)}`, "success");
+      } else {
+        showToast("Failed to update status.", "error");
+      }
+    } catch (err) {
+      showToast("Server connection error.", "error");
+    }
   };
 
   const handleAssignDelivery = async (orderId) => {
     const boyId = selectedDeliveryBoy[orderId];
-    if (!boyId) return alert("Please select a delivery partner.");
+    if (!boyId) return showToast("Please select a delivery partner first.", "warning");
+
     const boy = deliveryStaff.find(d => d.id === parseInt(boyId));
 
     try {
       const res = await fetch(`http://localhost:8080/api/admin/orders/${orderId}/assign?boyId=D-0${boy.id}&boyName=${boy.name}`, { method: 'PATCH' });
       if (res.ok) {
         setOrders(orders.map(o => o.id === orderId ? { ...o, status: 'OUT_FOR_DELIVERY', assignedTo: `D-0${boy.id} - ${boy.name}` } : o));
-        alert(`Order dispatched with ${boy.name}!`);
+        showToast(`Dispatched with ${boy.name}!`, "success");
+      } else {
+        showToast("Failed to assign delivery.", "error");
       }
-    } catch (err) { alert("Failed to assign delivery."); }
+    } catch (err) {
+      showToast("Server connection error.", "error");
+    }
   };
 
   const handleVerifyPickup = async (orderId) => {
-    if(!verifyCodeInput[orderId]) return alert("Enter the PIN");
+    if(!verifyCodeInput[orderId]) return showToast("Please enter the PIN code.", "warning");
+
     try {
       const res = await fetch(`http://localhost:8080/api/admin/orders/${orderId}/verify?pin=${verifyCodeInput[orderId]}`, { method: 'POST' });
       if (res.ok) {
         setOrders(orders.map(o => o.id === orderId ? { ...o, status: 'DELIVERED' } : o));
-        alert(`Verified! Order handed to customer.`);
+        showToast("✅ Verified! Handed to customer.", "success");
         setVerifyCodeInput(prev => ({ ...prev, [orderId]: '' }));
-      } else alert("❌ Invalid Code.");
-    } catch (err) { alert("Server error."); }
+      } else {
+        showToast("❌ Invalid PIN Code.", "error");
+      }
+    } catch (err) {
+      showToast("Server connection error.", "error");
+    }
   };
 
-  // 👉 UPGRADED: Smart Fetching & Data Normalization
-    const openQuickView = async (productId) => {
-      setIsLoadingProduct(true);
-      setQuickViewProduct({ id: productId, name: 'Loading...' });
+  const openQuickView = async (productId) => {
+    setIsLoadingProduct(true);
+    setQuickViewProduct({ id: productId, name: 'Loading...' });
 
-      try {
-        const res = await fetch(`http://localhost:8080/api/products/${productId}`);
-        if (res.ok) {
-          const data = await res.json();
-
-          // SMART MAPPING: Catch the attributes no matter what your backend named them
-          data.normalizedAttributes = data.attributes || data.attrs || data.specs || data.details || data.features || {};
-
-          setQuickViewProduct(data);
-        } else {
-          setQuickViewProduct({ error: 'Product details not found.' });
-        }
-      } catch(err) {
-        setQuickViewProduct({ error: 'Network error.' });
-      } finally {
-        setIsLoadingProduct(false);
+    try {
+      const res = await fetch(`http://localhost:8080/api/products/${productId}`);
+      if (res.ok) {
+        const data = await res.json();
+        data.normalizedAttributes = data.attributes || data.attrs || data.specs || data.details || data.features || {};
+        setQuickViewProduct(data);
+      } else {
+        setQuickViewProduct({ error: 'Product details not found.' });
       }
-    };
+    } catch(err) {
+      setQuickViewProduct({ error: 'Network error.' });
+    } finally {
+      setIsLoadingProduct(false);
+    }
+  };
 
-  // 👉 AGGREGATE PICKING LIST
   const generatePickingList = () => {
     const list = {};
     orders.filter(o => o.status === 'PENDING').forEach(order => {
       order.itemsList.forEach(item => {
-        // Fallback to "General" if category wasn't saved in the order payload
         const cat = item.category || 'All Items';
         const sub = item.subcategory || 'General';
 
@@ -224,7 +248,6 @@ const ActiveOrders = ({ orders, setOrders }) => {
                               {order.itemsList.map((item, idx) => (
                                 <li key={idx}>
                                   <span className="qty-pill">{item.qty}x</span>
-                                  {/* 👉 NEW: Trigger Modal instead of Route Link */}
                                   <button className="product-link-btn" onClick={() => openQuickView(item.productId)}>
                                     {item.name} ↗
                                   </button>
@@ -253,7 +276,8 @@ const ActiveOrders = ({ orders, setOrders }) => {
           </table>
         </div>
       )}
-{/* --- QUICK VIEW MODAL --- */}
+
+      {/* --- QUICK VIEW MODAL --- */}
       {quickViewProduct && (
         <div className="modal-overlay" onClick={() => setQuickViewProduct(null)}>
           <div className="quick-view-modal" onClick={(e) => e.stopPropagation()}>
@@ -265,79 +289,62 @@ const ActiveOrders = ({ orders, setOrders }) => {
               <div style={{ color: '#ef4444', textAlign: 'center', padding: '20px' }}>{quickViewProduct.error}</div>
             ) : (
               <div>
-                  <div>
-                                  {/* TOP SECTION: Image & Basic Info */}
-                                  <div style={{ display: 'flex', gap: '25px', marginBottom: '30px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: '25px', marginBottom: '30px', flexWrap: 'wrap' }}>
+                  <div style={{ width: '160px', height: '160px', flexShrink: 0, backgroundColor: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px' }}>
+                    {quickViewProduct.img ? (
+                      <img src={quickViewProduct.img} alt={quickViewProduct.name} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                    ) : (
+                      <span style={{ fontSize: '3rem' }}>📦</span>
+                    )}
+                  </div>
 
-                                    {/* Product Image */}
-                                    <div style={{ width: '160px', height: '160px', flexShrink: 0, backgroundColor: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px' }}>
-                                      {quickViewProduct.img ? (
-                                        <img src={quickViewProduct.img} alt={quickViewProduct.name} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
-                                      ) : (
-                                        <span style={{ fontSize: '3rem' }}>📦</span>
-                                      )}
-                                    </div>
+                  <div style={{ flex: 1, minWidth: '200px' }}>
+                    <h3 style={{ margin: '0 0 10px 0', fontSize: '1.6rem', color: '#0f172a' }}>{quickViewProduct.name}</h3>
 
-                                    {/* Product Title, Price, Badges */}
-                                    <div style={{ flex: 1, minWidth: '200px' }}>
-                                      <h3 style={{ margin: '0 0 10px 0', fontSize: '1.6rem', color: '#0f172a' }}>{quickViewProduct.name}</h3>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px' }}>
+                      <span style={{ fontSize: '1.4rem', fontWeight: 'bold', color: '#f59e0b' }}>
+                        ₹{quickViewProduct.price || quickViewProduct.discountPrice}
+                      </span>
+                      {(quickViewProduct.originalPrice || quickViewProduct.mrp) && (
+                        <span style={{ fontSize: '1rem', color: '#94a3b8', textDecoration: 'line-through', fontWeight: 'bold' }}>
+                          ₹{quickViewProduct.originalPrice || quickViewProduct.mrp}
+                        </span>
+                      )}
+                    </div>
 
-                                      {/* Price Row matching your ideal screenshot */}
-                                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px' }}>
-                                        <span style={{ fontSize: '1.4rem', fontWeight: 'bold', color: '#f59e0b' }}>
-                                          ₹{quickViewProduct.price || quickViewProduct.discountPrice}
-                                        </span>
-                                        {/* Show strikethrough MRP if it exists */}
-                                        {(quickViewProduct.originalPrice || quickViewProduct.mrp) && (
-                                          <span style={{ fontSize: '1rem', color: '#94a3b8', textDecoration: 'line-through', fontWeight: 'bold' }}>
-                                            ₹{quickViewProduct.originalPrice || quickViewProduct.mrp}
-                                          </span>
-                                        )}
-                                      </div>
+                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '15px' }}>
+                      <span style={{ backgroundColor: '#f1f5f9', color: '#475569', padding: '4px 12px', borderRadius: '20px', fontSize: '0.85rem', border: '1px solid #e2e8f0' }}>
+                        {quickViewProduct.category} &gt; {quickViewProduct.subcategory}
+                      </span>
 
-                                      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '15px' }}>
-                                        <span style={{ backgroundColor: '#f1f5f9', color: '#475569', padding: '4px 12px', borderRadius: '20px', fontSize: '0.85rem', border: '1px solid #e2e8f0' }}>
-                                          {quickViewProduct.category} &gt; {quickViewProduct.subcategory}
-                                        </span>
+                      {quickViewProduct.stock <= 0 && (
+                        <span style={{ backgroundColor: '#fee2e2', color: '#ef4444', padding: '4px 10px', borderRadius: '4px', fontSize: '0.85rem', fontWeight: 'bold' }}>
+                          Out of Stock
+                        </span>
+                      )}
+                    </div>
 
-                                        {quickViewProduct.stock <= 0 && (
-                                          <span style={{ backgroundColor: '#fee2e2', color: '#ef4444', padding: '4px 10px', borderRadius: '4px', fontSize: '0.85rem', fontWeight: 'bold' }}>
-                                            Out of Stock
-                                          </span>
-                                        )}
-                                      </div>
+                    <p style={{ margin: 0, fontSize: '0.95rem', color: '#64748b', lineHeight: '1.4' }}>
+                      {quickViewProduct.description || 'No description available for this item.'}
+                    </p>
+                  </div>
+                </div>
 
-                                      <p style={{ margin: 0, fontSize: '0.95rem', color: '#64748b', lineHeight: '1.4' }}>
-                                        {quickViewProduct.description || 'No description available for this item.'}
-                                      </p>
-                                    </div>
-                                  </div>
+                <div>
+                  <h4 style={{ margin: '0 0 15px 0', color: '#0f172a', fontSize: '1.1rem', borderBottom: '1px solid #f1f5f9', paddingBottom: '10px' }}>
+                    Technical & Variant Attributes
+                  </h4>
 
-                                  {/* BOTTOM SECTION: The Grid Attribute Layout */}
-                                  <div>
-                                    <h4 style={{ margin: '0 0 15px 0', color: '#0f172a', fontSize: '1.1rem', borderBottom: '1px solid #f1f5f9', paddingBottom: '10px' }}>
-                                      Technical & Variant Attributes
-                                    </h4>
-
-                                    {Object.keys(quickViewProduct.normalizedAttributes).length > 0 ? (
-                                      <div className="product-attribute-grid">
-                                        {Object.entries(quickViewProduct.normalizedAttributes).map(([key, val]) => (
-                                          <div key={key} className="attribute-card">
-                                            <div className="attribute-label">{key}</div>
-                                            <div className="attribute-value">{val}</div>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    ) : (
-                                      <div style={{ color: '#94a3b8', fontSize: '0.9rem', fontStyle: 'italic', padding: '10px 0' }}>
-                                        No technical specifications provided for this product.
-                                      </div>
-                                    )}
-                                  </div>
-
-
-                  {/* Fallback if no attributes exist */}
-                  {(!quickViewProduct.attributes || Object.keys(quickViewProduct.attributes).length === 0) && (
+                  {Object.keys(quickViewProduct.normalizedAttributes).length > 0 ? (
+                    <div className="product-attribute-grid">
+                      {Object.entries(quickViewProduct.normalizedAttributes).map(([key, val]) => (
+                        <div key={key} className="attribute-card">
+                          <div className="attribute-label">{key}</div>
+                          <div className="attribute-value">{val}</div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
                     <div style={{ color: '#94a3b8', fontSize: '0.9rem', fontStyle: 'italic', padding: '10px 0' }}>
                       No technical specifications provided for this product.
                     </div>
@@ -346,6 +353,15 @@ const ActiveOrders = ({ orders, setOrders }) => {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* =========================================
+          CUSTOM TOAST NOTIFICATION
+          ========================================= */}
+      {toast.visible && (
+        <div className={`custom-toast toast-${toast.type}`}>
+          {toast.type === 'success' ? '✅' : toast.type === 'warning' ? '⚠️' : '❌'} {toast.message}
         </div>
       )}
 

@@ -17,4 +17,6 @@ public class DeliveryStaff {
     private String phone;
     private boolean isActive = true;
     private String pin;
+    private String alternatePhone;
+    private String role;
 }

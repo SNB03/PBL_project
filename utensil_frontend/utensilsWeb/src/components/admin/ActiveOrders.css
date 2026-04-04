@@ -6,17 +6,52 @@
   border-radius: 12px;
 }
 
-.admin-header h2 {
+/* --- Top Control Bar --- */
+.admin-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.admin-controls h2 {
   font-size: 1.8rem;
   color: #0f172a;
   margin: 0 0 5px 0;
 }
 
-.admin-header p {
+.admin-controls p {
   color: #64748b;
-  margin: 0 0 20px 0;
+  margin: 0;
 }
 
+.view-toggle {
+  display: flex;
+  background-color: #e2e8f0;
+  padding: 4px;
+  border-radius: 8px;
+}
+
+.view-btn {
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  font-weight: bold;
+  color: #64748b;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.view-btn.active {
+  background-color: white;
+  color: #0f172a;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* --- Tables --- */
 .admin-table-wrapper {
   background-color: white;
   border-radius: 12px;
@@ -170,14 +205,6 @@
   gap: 10px;
 }
 
-.logistics-list li {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 0.95rem;
-  color: #334155;
-}
-
 .qty-pill {
   background-color: #0f172a;
   color: white;
@@ -185,6 +212,23 @@
   border-radius: 4px;
   font-size: 0.8rem;
   font-weight: bold;
+}
+
+.product-link-btn {
+  background: none;
+  border: none;
+  color: #0f172a;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0;
+}
+.product-link-btn:hover {
+  color: #3b82f6;
+  text-decoration: underline;
 }
 
 .payment-tag {
@@ -199,187 +243,6 @@
 .tag-cod { background-color: #eff6ff; color: #1e40af; }
 .tag-online { background-color: #f0fdf4; color: #166534; }
 
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* Add to src/components/admin/ActiveOrders.css */
-
-.admin-header-flex {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  margin-bottom: 25px;
-  flex-wrap: wrap;
-  gap: 15px;
-}
-
-.view-toggle {
-  display: flex;
-  background-color: #e2e8f0;
-  padding: 5px;
-  border-radius: 8px;
-}
-
-.toggle-btn {
-  padding: 10px 20px;
-  border: none;
-  background: none;
-  border-radius: 6px;
-  font-weight: 700;
-  color: #64748b;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.toggle-btn.active {
-  background-color: white;
-  color: #0f172a;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
-.picklist-header {
-  padding: 20px;
-  background-color: #f8fafc;
-  border-bottom: 1px solid #e2e8f0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.picklist-header h3 { margin: 0; color: #0f172a; }
-
-.qty-pill.large {
-  font-size: 1rem;
-  padding: 4px 12px;
-  background-color: #0f172a;
-}
-
-.qty-pill.blue {
-  background-color: #eff6ff;
-  color: #1e40af;
-}
-
-.order-refs {
-  color: #64748b;
-  font-size: 0.85rem;
-  letter-spacing: 1px;
-}
-
-.product-link {
-  color: #0f172a;
-  text-decoration: none;
-  font-weight: 600;
-  transition: color 0.2s;
-}
-
-.product-link:hover {
-  color: #3b82f6;
-}
-
-.payment-footer {
-  border-top: 1px solid #f1f5f9;
-  padding-top: 15px;
-  margin-top: 15px;
-}
-
-.p-0 { padding: 0 !important; }
-
-/* Add to src/components/admin/ActiveOrders.css */
-
-/* --- View Toggle Tabs --- */
-.view-toggle-container {
-  display: flex;
-  gap: 15px;
-  margin-bottom: 25px;
-  border-bottom: 2px solid #e2e8f0;
-}
-
-.view-toggle-btn {
-  background: none;
-  border: none;
-  padding: 15px 20px;
-  font-size: 1.1rem;
-  font-weight: bold;
-  cursor: pointer;
-  color: #64748b;
-  border-bottom: 3px solid transparent;
-  margin-bottom: -2px;
-  transition: all 0.2s;
-}
-
-.view-toggle-btn.active {
-  color: #3b82f6;
-  border-bottom-color: #3b82f6;
-}
-
-/* --- Master Packing Grid --- */
-.master-packing-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
-}
-
-.master-pack-card {
-  background-color: white;
-  padding: 25px;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-}
-
-.master-pack-qty {
-  background-color: #0f172a;
-  color: white;
-  font-size: 1.5rem;
-  font-weight: 900;
-  width: 50px;
-  height: 50px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border-radius: 12px;
-}
-/* src/components/admin/ActiveOrders.css */
-
-/* ... (Keep all your existing CSS from the previous step here) ... */
-
-/* --- Top Control Bar --- */
-.admin-controls {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.view-toggle {
-  display: flex;
-  background-color: #e2e8f0;
-  padding: 4px;
-  border-radius: 8px;
-}
-
-.view-btn {
-  padding: 8px 16px;
-  border: none;
-  background: transparent;
-  font-weight: bold;
-  color: #64748b;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.view-btn.active {
-  background-color: white;
-  color: #0f172a;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
 /* --- Master Picking List --- */
 .picking-list-container {
   background-color: white;
@@ -388,10 +251,7 @@
   padding: 25px;
 }
 
-.category-group {
-  margin-bottom: 30px;
-}
-
+.category-group { margin-bottom: 30px; }
 .category-title {
   font-size: 1.4rem;
   color: #0f172a;
@@ -399,12 +259,10 @@
   padding-bottom: 10px;
   margin-bottom: 15px;
 }
-
 .subcategory-group {
   margin-left: 20px;
   margin-bottom: 20px;
 }
-
 .subcategory-title {
   font-size: 1.1rem;
   color: #475569;
@@ -425,10 +283,7 @@
   cursor: pointer;
   transition: background 0.2s;
 }
-
-.picking-item-row:hover {
-  background-color: #f1f5f9;
-}
+.picking-item-row:hover { background-color: #f1f5f9; }
 
 .picking-qty {
   font-size: 1.2rem;
@@ -456,7 +311,7 @@
   padding: 30px;
   border-radius: 16px;
   width: 100%;
-  max-width: 500px;
+  max-width: 650px;
   box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
   position: relative;
   animation: slideUp 0.3s ease-out;
@@ -475,40 +330,9 @@
   color: #64748b;
   cursor: pointer;
 }
-
 .close-modal-btn:hover {
   background: #e2e8f0;
   color: #0f172a;
-}
-
-.product-link-btn {
-  background: none;
-  border: none;
-  color: #0f172a;
-  font-weight: 600;
-  cursor: pointer;
-  text-align: left;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 0;
-}
-.product-link-btn:hover {
-  color: #3b82f6;
-  text-decoration: underline;
-}
-/* Add this to the bottom of src/components/admin/ActiveOrders.css */
-
-/* --- Quick View Modal Upgrades --- */
-.quick-view-modal {
-  background-color: white;
-  padding: 30px;
-  border-radius: 16px;
-  width: 100%;
-  max-width: 650px; /* Made slightly wider to fit the 2-column layout nicely */
-  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
-  position: relative;
-  animation: slideUp 0.3s ease-out;
 }
 
 .product-attribute-grid {
@@ -540,8 +364,40 @@
   word-wrap: break-word;
 }
 
+/* --- Toast Notification --- */
+.custom-toast {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  padding: 15px 25px;
+  border-radius: 8px;
+  color: white;
+  font-weight: bold;
+  font-size: 1rem;
+  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.2);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: slideInRight 0.3s ease-out forwards;
+}
+
+.toast-success { background-color: #10b981; border: 1px solid #059669; }
+.toast-error { background-color: #ef4444; border: 1px solid #b91c1c; }
+.toast-warning { background-color: #f59e0b; border: 1px solid #d97706; }
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
 @media (max-width: 500px) {
   .product-attribute-grid {
-    grid-template-columns: 1fr; /* Stack on very small screens */
+    grid-template-columns: 1fr;
   }
 }

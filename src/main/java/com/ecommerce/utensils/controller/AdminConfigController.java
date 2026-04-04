@@ -72,4 +72,13 @@ public class AdminConfigController {
         settings.setId(1L); // Force it to always update row 1
         return settingsRepository.save(settings);
     }
+    // 👉 NEW: Delete Staff Endpoint
+    @DeleteMapping("/staff/{id}")
+    public ResponseEntity<?> deleteStaff(@PathVariable Long id) {
+        return staffRepository.findById(id).map(staff -> {
+            staffRepository.delete(staff);
+            // Optional: You may also want to delete their User login profile here
+            return ResponseEntity.ok().build();
+        }).orElse(ResponseEntity.notFound().build());
+    }
 }
