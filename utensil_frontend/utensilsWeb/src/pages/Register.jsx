@@ -1,3 +1,4 @@
+// src/pages/Register.jsx
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './Auth.css';
@@ -5,13 +6,9 @@ import './Auth.css';
 const Register = () => {
   const navigate = useNavigate();
 
-  // Step Management
   const [step, setStep] = useState(1); // 1 = Details, 2 = OTP
-
-  // Form Data
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', password: '', confirmPassword: '', otp: '' });
 
-  // UI States
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -19,29 +16,21 @@ const Register = () => {
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
-  // STEP 1: VALIDATE AND REQUEST OTP
   const handleSendOTP = async (e) => {
     e.preventDefault();
     setError('');
 
-    if (formData.password !== formData.confirmPassword) {
-      return setError("Passwords do not match!");
-    }
-    if (formData.password.length < 6) {
-      return setError("Password must be at least 6 characters.");
-    }
+    if (formData.password !== formData.confirmPassword) return setError("Passwords do not match!");
+    if (formData.password.length < 6) return setError("Password must be at least 6 characters.");
 
     setIsLoading(true);
     try {
       const res = await fetch('http://localhost:8080/api/auth/send-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: formData.email })
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: formData.email })
       });
 
       if (res.ok) {
-        setStep(2); // Move to OTP screen!
-        alert("OTP sent! Check your Spring Boot console for the code.");
+        setStep(2);
       } else {
         const errData = await res.json();
         setError(errData.error || 'Failed to send OTP.');
@@ -53,7 +42,6 @@ const Register = () => {
     }
   };
 
-  // STEP 2: VERIFY OTP AND REGISTER
   const handleRegister = async (e) => {
     e.preventDefault();
     setError('');
@@ -61,9 +49,7 @@ const Register = () => {
 
     try {
       const res = await fetch('http://localhost:8080/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData) // Sends name, email, phone, password, AND otp
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData)
       });
 
       if (res.ok) {
@@ -94,7 +80,7 @@ const Register = () => {
 
         {/* --- STEP 1: DETAILS FORM --- */}
         {step === 1 && (
-          <form className="auth-form" onSubmit={handleSendOTP}>
+          <form className="auth-form animate-fade-in" onSubmit={handleSendOTP}>
             <div className="form-group">
               <label>Full Name</label>
               <input type="text" name="name" placeholder="John Doe" value={formData.name} onChange={handleChange} required />
@@ -110,31 +96,29 @@ const Register = () => {
               <input type="tel" name="phone" placeholder="10-digit mobile number" value={formData.phone} onChange={handleChange} required />
             </div>
 
-            <div className="form-group position-relative">
+            <div className="form-group">
               <label>Password</label>
-              <div className="password-wrapper" style={{ position: 'relative' }}>
+              <div className="password-wrapper">
                 <input
                   type={showPassword ? "text" : "password"}
                   name="password" placeholder="Create a strong password"
                   value={formData.password} onChange={handleChange} required
-                  style={{ width: '100%', paddingRight: '40px' }}
                 />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem' }}>
+                <button type="button" className="password-toggle-btn" onClick={() => setShowPassword(!showPassword)} tabIndex="-1">
                   {showPassword ? "🙈" : "👁️"}
                 </button>
               </div>
             </div>
 
-            <div className="form-group position-relative">
+            <div className="form-group">
               <label>Confirm Password</label>
-              <div className="password-wrapper" style={{ position: 'relative' }}>
+              <div className="password-wrapper">
                 <input
                   type={showConfirm ? "text" : "password"}
                   name="confirmPassword" placeholder="Confirm your password"
                   value={formData.confirmPassword} onChange={handleChange} required
-                  style={{ width: '100%', paddingRight: '40px' }}
                 />
-                <button type="button" onClick={() => setShowConfirm(!showConfirm)} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem' }}>
+                <button type="button" className="password-toggle-btn" onClick={() => setShowConfirm(!showConfirm)} tabIndex="-1">
                   {showConfirm ? "🙈" : "👁️"}
                 </button>
               </div>
@@ -149,13 +133,13 @@ const Register = () => {
         {/* --- STEP 2: OTP FORM --- */}
         {step === 2 && (
           <form className="auth-form animate-fade-in" onSubmit={handleRegister}>
-            <div style={{ backgroundColor: '#eff6ff', padding: '15px', borderRadius: '8px', marginBottom: '20px', fontSize: '0.9rem', color: '#1e40af', border: '1px solid #bfdbfe' }}>
-              We've sent a 6-digit verification code to <strong>{formData.email}</strong>.<br/>
-              *(For now, check your Spring Boot console to see the code!)*
+            <div className="otp-info-box">
+              We've sent a 6-digit verification code to <strong>{formData.email}</strong>.<br/><br/>
+              <span style={{fontSize: '0.8rem', color: '#64748b'}}>*(Check your Spring Boot console to see the mock code!)*</span>
             </div>
 
             <div className="form-group">
-              <label>Enter 6-Digit OTP</label>
+              <label style={{ textAlign: 'center' }}>Enter 6-Digit OTP</label>
               <input
                 type="text"
                 name="otp"
@@ -164,7 +148,7 @@ const Register = () => {
                 onChange={handleChange}
                 required
                 maxLength="6"
-                style={{ fontSize: '1.5rem', letterSpacing: '5px', textAlign: 'center', fontWeight: 'bold' }}
+                className="otp-input"
               />
             </div>
 
@@ -172,7 +156,7 @@ const Register = () => {
               {isLoading ? 'Verifying...' : 'Verify & Create Account'}
             </button>
 
-            <button type="button" onClick={() => setStep(1)} style={{ width: '100%', background: 'none', border: 'none', color: '#64748b', marginTop: '15px', cursor: 'pointer', fontWeight: 'bold' }}>
+            <button type="button" className="btn-back-edit" onClick={() => setStep(1)}>
               ← Back to Edit Details
             </button>
           </form>

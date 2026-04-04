@@ -69,7 +69,24 @@ public class CustomerOrderController {
             return ResponseEntity.ok(updatedOrder);
         }).orElse(ResponseEntity.notFound().build());
     }
-
+    // 👉 NEW: DELETE method for removing past history
+    @DeleteMapping("/{orderId}")
+    public ResponseEntity<?> deleteOrder(@PathVariable String orderId) {
+        return orderRepository.findById(orderId).map(order -> {
+            orderRepository.delete(order);
+            return ResponseEntity.ok().build();
+        }).orElse(ResponseEntity.notFound().build());
+    }
+    // 👉 NEW: PATCH method for quickly Cancelling an order via URL params
+    @PatchMapping("/{orderId}/status")
+    public ResponseEntity<?> patchOrderStatus(
+            @PathVariable String orderId,
+            @RequestParam String status) {
+        return orderRepository.findById(orderId).map(order -> {
+            order.setStatus(OrderStatus.valueOf(status.toUpperCase()));
+            return ResponseEntity.ok(orderRepository.save(order));
+        }).orElse(ResponseEntity.notFound().build());
+    }
     // Verify Delivery PIN
     @PostMapping("/{orderId}/verify-delivery")
     public ResponseEntity<?> verifyDelivery(@PathVariable String orderId, @RequestBody Map<String, String> payload) {

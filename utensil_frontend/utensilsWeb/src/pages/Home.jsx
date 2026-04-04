@@ -1,101 +1,85 @@
 // src/pages/Home.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import ProductCard from '../components/ui/ProductCard';
+import { useCart } from '../context/CartContext';
 import './Home.css';
 
 const Home = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [products, setProducts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // 👉 1. Pull the global cart action
+  const { addToCart } = useCart();
   const navigate = useNavigate();
 
-  // MOCK DATA: Added a real 3L cooker instead of the gateway card
-  const products = [
-    // Cookware
-    { id: 101, name: "Prestige Svachh Cooker (3L)", category: "Cookware", price: 2100, img: "🍲", tag: "Top Rated" },
-    { id: 2, name: "Premium Non-Stick Tawa", category: "Cookware", price: 650, img: "🍳", tag: "Best Seller" },
-    { id: 3, name: "Heavy Duty Iron Kadai", category: "Cookware", price: 850, img: "🥘", tag: "Long Lasting" },
-    { id: 4, name: "Copper Bottom Saucepan", category: "Cookware", price: 450, img: "🥘", tag: "Fast Heating" },
+  // 👉 2. Setup the Toast State and Function
+  const [toast, setToast] = useState({ visible: false, message: '' });
 
-    // Cutlery
-    { id: 5, name: "Professional Chef Knife", category: "Cutlery", price: 850, img: "🔪", tag: "Sharp Edge" },
-    { id: 6, name: "Everyday Knife Set (3 Pcs)", category: "Cutlery", price: 350, img: "🗡️", tag: "Value Pack" },
-    { id: 7, name: "Heavy Kitchen Scissors", category: "Cutlery", price: 250, img: "✂️", tag: "Multi-purpose" },
-    { id: 8, name: "Wooden Chopping Board", category: "Cutlery", price: 400, img: "🪵", tag: "Organic Wood" },
+  const showToast = (message) => {
+    setToast({ visible: true, message });
+    setTimeout(() => setToast({ visible: false, message: '' }), 3000);
+  };
 
-    // Serveware
-    { id: 9, name: "Steel Dinner Plates (Set of 6)", category: "Serveware", price: 850, img: "🍽️", tag: "Rust Free" },
-    { id: 10, name: "Glass Water Jug (1.5L)", category: "Serveware", price: 450, img: "🏺", tag: "Elegant" },
-    { id: 11, name: "Ceramic Serving Bowls", category: "Serveware", price: 600, img: "🥣", tag: "Microwave Safe" },
-    { id: 12, name: "Guest Tea Cup Set (6 Pcs)", category: "Serveware", price: 350, img: "☕", tag: "Classic" }
-  ];
+  // 👉 3. Fetch Real Data from Spring Boot
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const res = await fetch('http://localhost:8080/api/products');
+        if (res.ok) {
+          const data = await res.json();
+
+          const productsArray = Array.isArray(data) ? data : (data.content || []);
+
+          const formattedProducts = productsArray.map(p => ({
+            id: p.id,
+            name: p.name || 'Unnamed Product',
+            category: p.category || 'General',
+            subcategory: p.subcategory || '',
+            price: p.price || 0,
+            img: p.img || p.imageUrl || p.image || '📦',
+            tag: p.tag || '',
+            stock: p.stock || 0
+          }));
+
+          setProducts(formattedProducts);
+        }
+      } catch (error) {
+        console.error("Failed to connect to backend API:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   const displayedProducts = products.filter(p =>
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.category.toLowerCase().includes(searchTerm.toLowerCase())
+    (p.category && p.category.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const categoriesToPreview = ["Cookware", "Cutlery", "Serveware"];
+  const availableCategories = [...new Set(products.map(p => p.category).filter(Boolean))];
 
-  // --- CART LOGIC ---
+  // 👉 4. Upgraded Add to Cart logic
   const handleAddToCart = (product) => {
-    const existingCart = JSON.parse(localStorage.getItem('utensil_cart')) || [];
-
-    existingCart.push({
-      id: product.id,
-      name: product.name,
-      category: product.category,
-      price: product.price,
-      image: product.img
-    });
-
-    localStorage.setItem('utensil_cart', JSON.stringify(existingCart));
-    alert(`${product.name} added to your cart! 🛒`);
+    addToCart(product, 1); // Triggers Context
+    showToast(`${product.name} added to your cart!`); // Triggers Toast
   };
 
-  // --- EXPLORE LOGIC ---
   const handleExplore = (product) => {
-    // If it's a cooker, route them to the special Cooker page.
     if (product.name.toLowerCase().includes('cooker')) {
       navigate('/cookers');
     } else {
-      // Otherwise, route them to the general shop filtered by that category.
       navigate(`/shop?category=${product.category}`);
     }
   };
 
-  // --- DYNAMIC CARD RENDERER ---
-    const renderProductCard = (product) => (
-      <div key={product.id} className="item-card">
-        <span className="quality-tag">{product.tag}</span>
-
-        {/* 1. Make the Image Clickable */}
-        <Link to={`/product/${product.id}`} className="clickable-product-link">
-          <div className="item-img">
-            {product.img}
-          </div>
-        </Link>
-
-        <div className="item-details">
-          {/* 2. Make the Title Clickable */}
-          <Link to={`/product/${product.id}`} className="clickable-product-link">
-            <h4>{product.name}</h4>
-          </Link>
-          <span className="item-price">₹{product.price}</span>
-        </div>
-
-        <div className="card-actions">
-          <button className="btn-add-small" onClick={() => handleAddToCart(product)}>
-            Add to Cart
-          </button>
-          <button className="btn-explore" onClick={() => handleExplore(product)}>
-            Explore All
-          </button>
-        </div>
-      </div>
-    );
-
   return (
-    <div className="local-store-home">
+    <div className="local-store-home relative">
 
+      {/* Top Banner */}
       <div className="shop-info-banner">
         <div className="shop-info-content">
           <span>📍 Market Yard, Pune</span>
@@ -104,10 +88,10 @@ const Home = () => {
         </div>
       </div>
 
+      {/* Hero Search Section */}
       <div className="welcome-section">
         <h1>Welcome to UtensilPro</h1>
         <p>Your trusted neighborhood shop for premium quality kitchenware.</p>
-
         <div className="simple-search">
           <input
             type="text"
@@ -119,21 +103,36 @@ const Home = () => {
         </div>
       </div>
 
-      {searchTerm !== '' ? (
+      {/* Dynamic Content Area */}
+      {isLoading ? (
+        <div style={{ textAlign: 'center', padding: '100px 20px' }}>
+          <h2 style={{ color: '#64748b' }}>Loading Storefront...</h2>
+        </div>
+      ) : searchTerm !== '' ? (
         <div className="store-section">
-          <h2>Search Results</h2>
+          <div className="section-header-row">
+            <h2>Search Results for "{searchTerm}"</h2>
+          </div>
           <div className="simple-grid">
             {displayedProducts.length > 0 ? (
-              displayedProducts.map(renderProductCard)
+              displayedProducts.map(product => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  onAdd={handleAddToCart}
+                  onExplore={handleExplore}
+                />
+              ))
             ) : (
-              <p>Sorry, we couldn't find anything matching "{searchTerm}".</p>
+              <p style={{ color: '#64748b' }}>Sorry, we couldn't find anything matching your search.</p>
             )}
           </div>
         </div>
       ) : (
         <>
-          {categoriesToPreview.map(category => {
+          {availableCategories.slice(0, 4).map(category => {
             const categoryTopPicks = products.filter(p => p.category === category).slice(0, 4);
+            if (categoryTopPicks.length === 0) return null;
 
             return (
               <div key={category} className="store-section category-preview-section">
@@ -148,12 +147,26 @@ const Home = () => {
                 </div>
 
                 <div className="simple-grid">
-                  {categoryTopPicks.map(renderProductCard)}
+                  {categoryTopPicks.map(product => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      onAdd={handleAddToCart}
+                      onExplore={handleExplore}
+                    />
+                  ))}
                 </div>
               </div>
             );
           })}
         </>
+      )}
+
+      {/* 👉 5. The Toast Component at the very bottom */}
+      {toast.visible && (
+        <div style={{ position: 'fixed', bottom: '30px', right: '30px', backgroundColor: '#10b981', color: 'white', padding: '15px 25px', borderRadius: '8px', fontWeight: 'bold', zIndex: 1000, boxShadow: '0 10px 25px -5px rgba(0,0,0,0.2)', animation: 'slideInRight 0.3s ease-out' }}>
+          ✅ {toast.message}
+        </div>
       )}
     </div>
   );

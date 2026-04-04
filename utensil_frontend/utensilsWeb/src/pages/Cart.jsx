@@ -1,12 +1,13 @@
 // src/pages/Cart.jsx
 import React, { useState } from 'react';
-import { useNavigate,Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
-import CustomerNavbar from '../components/CustomerNavbar';
+// import Navbar from '../components/layout/Navbar'; // 👉 Uses the new global Navbar
+import './Cart.css'; // 👉 Hooks into our new responsive CSS
 
 const Cart = () => {
-  const { cartItems, updateQuantity, removeFromCart, cartTotal, clearCart } = useCart();
+  const { cartItems, cartTotal, clearCart } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -78,18 +79,16 @@ const Cart = () => {
         const scriptLoaded = await loadRazorpay();
         if (!scriptLoaded) throw new Error("Razorpay failed to load");
 
-        // Simulate getting order ID from backend (Replace with your actual API later)
         const dummyOrderId = "order_" + Math.random().toString(36).substring(7);
 
         const options = {
-          key: "YOUR_RAZORPAY_KEY", // Will use test key
-          amount: finalTotal * 100, // Paisa
+          key: "YOUR_RAZORPAY_KEY",
+          amount: finalTotal * 100,
           currency: "INR",
           name: "UtensilPro",
           description: "Secure Online Payment",
           order_id: dummyOrderId,
           prefill: { name: user.name, email: user.email, contact: user.phone },
-          // We DO NOT restrict the methods here. Razorpay will naturally show UPI, Card, Netbanking!
           theme: { color: "#0f172a" },
           handler: async (response) => {
             orderPayload.status = "PAID";
@@ -112,69 +111,87 @@ const Cart = () => {
     }
   };
 
+  // If cart is empty, show empty state immediately
+  if (cartItems.length === 0) {
+    return (
+      <div className="storefront-container">
+
+        <main className="store-main" style={{ justifyContent: 'center', textAlign: 'center', paddingTop: '100px' }}>
+          <div>
+            <span style={{ fontSize: '4rem' }}>🛒</span>
+            <h2>Your Cart is Empty</h2>
+            <p style={{ color: '#64748b', marginBottom: '20px' }}>Add some items to checkout.</p>
+            <Link to="/shop" className="btn-primary-action" style={{ backgroundColor: '#0f172a', padding: '15px 30px', display: 'inline-block', textDecoration: 'none' }}>
+              Return to Shop
+            </Link>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="storefront-container">
-      <CustomerNavbar />
-      <main className="store-main" style={{ display: 'flex', gap: '30px', paddingTop: '30px', flexWrap: 'wrap' }}>
 
+
+      <main className="store-main">
         {/* LEFT COLUMN: Dynamic Steps */}
-        <div style={{ flex: '2', minWidth: '350px' }}>
+        <div className="checkout-left-column">
 
          {/* STEP 1: Address & Cart Review */}
          {checkoutStep === 1 && (
            <div className="animate-fade-in">
-             <h1 style={{ fontSize: '2rem', marginBottom: '20px', color: '#0f172a' }}>Checkout (Step 1 of 2)</h1>
+             <h1 className="checkout-step-title">Checkout (Step 1 of 2)</h1>
 
              {/* 🚚 DELIVERY SECTION */}
-             <section style={{ backgroundColor: 'white', padding: '25px', borderRadius: '16px', border: '1px solid #e2e8f0', marginBottom: '25px', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
-               <h2 style={{ fontSize: '1.2rem', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+             <section className="checkout-card">
+               <h2 className="checkout-card-header">
                  <span>🚚</span> Delivery Details
                </h2>
-               <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+
+               <div className="fulfillment-options">
                  {['Home Delivery', 'Store Pickup'].map(t => (
                    <button
                      key={t}
                      onClick={() => setFulfillmentType(t)}
-                     style={{
-                       flex: 1, padding: '15px', borderRadius: '12px', cursor: 'pointer', fontWeight: 'bold', transition: 'all 0.2s',
-                       border: fulfillmentType === t ? '2px solid #3b82f6' : '1px solid #cbd5e1',
-                       backgroundColor: fulfillmentType === t ? '#eff6ff' : 'white',
-                       color: fulfillmentType === t ? '#3b82f6' : '#475569'
-                     }}
+                     className={`btn-fulfillment ${fulfillmentType === t ? 'active' : 'inactive'}`}
                    >
                      {t}
                    </button>
                  ))}
                </div>
+
                {fulfillmentType === 'Home Delivery' && (
                  <div className="animate-fade-in">
-                   <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', fontSize: '0.9rem', color: '#334155' }}>Shipping Address</label>
+                   <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', fontSize: '0.9rem', color: '#334155' }}>
+                     Shipping Address
+                   </label>
                    <textarea
                      rows="3"
                      placeholder="House No, Street, Landmark, Pincode..."
                      value={address}
                      onChange={(e) => setAddress(e.target.value)}
-                     style={{ width: '100%', padding: '15px', borderRadius: '12px', border: '1px solid #cbd5e1', resize: 'vertical', fontFamily: 'inherit', fontSize: '1rem' }}
+                     className="address-textarea"
                    />
                  </div>
                )}
              </section>
 
              {/* 📦 DETAILED ORDER REVIEW SECTION */}
-             <section style={{ backgroundColor: 'white', padding: '25px', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
-               <h2 style={{ fontSize: '1.2rem', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+             <section className="checkout-card">
+               <h2 className="checkout-card-header">
                  <span>📦</span> Order Review
                </h2>
 
                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                  {cartItems.map(item => (
-                   <div key={item.id} style={{ display: 'flex', gap: '20px', paddingBottom: '20px', borderBottom: '1px solid #f1f5f9' }}>
+                   <div key={item.id} className="review-item-row">
 
-                     {/* Product Image (Clickable) */}
+                     {/* Product Image */}
                      <Link to={`/product/${item.id}`} style={{ textDecoration: 'none' }}>
-                       <div style={{ width: '100px', height: '100px', backgroundColor: '#f8fafc', borderRadius: '12px', display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', border: '1px solid #f1f5f9' }}>
+                       <div className="review-item-img">
                          {item.img && item.img.startsWith('http') ? (
-                           <img src={item.img} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                           <img src={item.img} alt={item.name} />
                          ) : (
                            <span style={{ fontSize: '3rem' }}>{item.img || '📦'}</span>
                          )}
@@ -190,7 +207,7 @@ const Cart = () => {
                          <span style={{ fontWeight: '900', color: '#0f172a', fontSize: '1.1rem' }}>₹{(item.price * item.qty).toLocaleString()}</span>
                        </div>
 
-                       {/* Features/Attributes Snippet */}
+                       {/* Attributes Snippet */}
                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '10px' }}>
                          {item.attrs && Object.entries(item.attrs).slice(0, 2).map(([key, val]) => (
                            <span key={key} style={{ fontSize: '0.75rem', backgroundColor: '#f1f5f9', color: '#64748b', padding: '2px 8px', borderRadius: '4px', fontWeight: 'bold' }}>
@@ -211,14 +228,10 @@ const Cart = () => {
                    </div>
                  ))}
                </div>
-
-               {/* Tip for the user */}
-               <div style={{ marginTop: '20px', padding: '12px', backgroundColor: '#fffbeb', borderRadius: '8px', color: '#b45309', fontSize: '0.85rem', display: 'flex', gap: '10px', alignItems: 'center' }}>
-                 <span>💡</span> Need to change quantities? Go back to the cart home or use the + / - buttons on the item list.
-               </div>
              </section>
            </div>
          )}
+
           {/* STEP 2: Payment Method Selection */}
           {checkoutStep === 2 && (
             <div className="animate-slide-up">
@@ -226,14 +239,15 @@ const Cart = () => {
                 ← Back to Address
               </button>
 
-              <h1 style={{ fontSize: '2rem', marginBottom: '20px' }}>Payment (Step 2 of 2)</h1>
+              <h1 className="checkout-step-title">Payment (Step 2 of 2)</h1>
 
-              <section style={{ backgroundColor: 'white', padding: '25px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                <h2 style={{ fontSize: '1.2rem', marginBottom: '20px' }}>Select Payment Method</h2>
+              <section className="checkout-card">
+                <h2 className="checkout-card-header">Select Payment Method</h2>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                  {/* Option 1: Razorpay (Handles all online logic) */}
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '15px', padding: '20px', borderRadius: '12px', border: paymentType === 'ONLINE' ? '2px solid #3b82f6' : '1px solid #cbd5e1', backgroundColor: paymentType === 'ONLINE' ? '#eff6ff' : 'white', cursor: 'pointer' }}>
+
+                  {/* Option 1: Razorpay */}
+                  <label className={`payment-option-label ${paymentType === 'ONLINE' ? 'active' : 'inactive'}`}>
                     <input type="radio" name="payment" checked={paymentType === 'ONLINE'} onChange={() => setPaymentType('ONLINE')} style={{ width: '20px', height: '20px' }} />
                     <div>
                       <span style={{ display: 'block', fontWeight: 'bold', fontSize: '1.1rem' }}>Pay Online</span>
@@ -242,56 +256,60 @@ const Cart = () => {
                   </label>
 
                   {/* Option 2: Cash on Delivery */}
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '15px', padding: '20px', borderRadius: '12px', border: paymentType === 'COD' ? '2px solid #3b82f6' : '1px solid #cbd5e1', backgroundColor: paymentType === 'COD' ? '#eff6ff' : 'white', cursor: 'pointer' }}>
+                  <label className={`payment-option-label ${paymentType === 'COD' ? 'active' : 'inactive'}`}>
                     <input type="radio" name="payment" checked={paymentType === 'COD'} onChange={() => setPaymentType('COD')} style={{ width: '20px', height: '20px' }} />
                     <div>
                       <span style={{ display: 'block', fontWeight: 'bold', fontSize: '1.1rem' }}>Cash on Delivery (COD)</span>
                       <span style={{ color: '#64748b', fontSize: '0.9rem' }}>Pay with cash when your order arrives</span>
                     </div>
                   </label>
+
                 </div>
               </section>
             </div>
           )}
 
         </div>
-{/* RIGHT COLUMN: Static Billing Summary */}
-        <aside style={{ flex: '1', minWidth: '300px', backgroundColor: 'white', padding: '30px', borderRadius: '16px', border: '1px solid #e2e8f0', height: 'fit-content', position: 'sticky', top: '100px' }}>
+
+        {/* RIGHT COLUMN: Static Billing Summary */}
+        <aside className="checkout-right-column">
           <h2 style={{ marginBottom: '20px', borderBottom: '2px solid #f1f5f9', paddingBottom: '10px' }}>Order Summary</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Item Total</span><span>₹{cartTotal.toLocaleString()}</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Delivery Fee</span><span style={{ color: deliveryFee === 0 ? '#10b981' : 'inherit' }}>{deliveryFee === 0 ? 'FREE' : `₹${deliveryFee}`}</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Platform Fee</span><span>₹{platformFee}</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '2px solid #f1f5f9', paddingTop: '15px', marginTop: '10px', fontSize: '1.4rem', fontWeight: '900', color: '#0f172a' }}>
+
+          <div className="summary-details">
+            <div className="summary-row"><span>Item Total</span><span>₹{cartTotal.toLocaleString()}</span></div>
+            <div className="summary-row"><span>Delivery Fee</span><span style={{ color: deliveryFee === 0 ? '#10b981' : 'inherit' }}>{deliveryFee === 0 ? 'FREE' : `₹${deliveryFee}`}</span></div>
+            <div className="summary-row"><span>Platform Fee</span><span>₹{platformFee}</span></div>
+
+            <div className="summary-total-row">
               <span>Total Pay</span>
               <span style={{ color: '#3b82f6' }}>₹{finalTotal.toLocaleString()}</span>
             </div>
           </div>
 
-          {/* 👉 THE CRITICAL SECURITY GUARD */}
+          {/* THE CRITICAL SECURITY GUARD */}
           {!user ? (
             <button
-              className="btn-add-to-cart"
+              className="btn-primary-action"
               onClick={() => navigate('/login', { state: { from: '/cart' } })}
-              style={{ width: '100%', marginTop: '30px', padding: '20px', fontSize: '1.1rem', backgroundColor: '#f59e0b', color: 'white' }}
+              style={{ backgroundColor: '#f59e0b' }}
             >
               Login to Checkout
             </button>
           ) : checkoutStep === 1 ? (
             <button
-              className="btn-add-to-cart"
+              className="btn-primary-action"
               onClick={handleProceedToPayment}
               disabled={cartItems.length === 0}
-              style={{ width: '100%', marginTop: '30px', padding: '20px', fontSize: '1.1rem' }}
+              style={{ backgroundColor: '#0f172a' }}
             >
               Proceed to Payment →
             </button>
           ) : (
             <button
-              className="btn-add-to-cart"
+              className="btn-primary-action"
               onClick={handleFinalCheckout}
               disabled={isProcessing}
-              style={{ width: '100%', marginTop: '30px', padding: '20px', fontSize: '1.1rem', backgroundColor: paymentType === 'COD' ? '#10b981' : '#0f172a' }}
+              style={{ backgroundColor: paymentType === 'COD' ? '#10b981' : '#0f172a' }}
             >
               {isProcessing ? 'Processing...' : paymentType === 'COD' ? 'Confirm COD Order' : `Pay ₹${finalTotal.toLocaleString()} Securely`}
             </button>

@@ -75,37 +75,6 @@ public class ProductController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
-    // HIGH PRIORITY: Fixed CSV Parsing using Apache Commons
-//    @PostMapping("/bulk-upload")
-//    public ResponseEntity<?> bulkUploadCSV(@RequestParam("file") MultipartFile file) {
-//        if (file.isEmpty()) return ResponseEntity.badRequest().body("File is empty.");
-//
-//        try (BufferedReader fileReader = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8));
-//             CSVParser csvParser = new CSVParser(fileReader, CSVFormat.DEFAULT.withFirstRecordAsHeader().withIgnoreHeaderCase().withTrim())) {
-//
-//            List<Product> products = new ArrayList<>();
-//
-//            for (CSVRecord record : csvParser) {
-//                Product p = new Product();
-//                p.setName(record.get("Name"));
-//                p.setCategory(record.get("Category"));
-//                p.setSubcategory(record.get("Subcategory"));
-//                p.setPrice(new BigDecimal(record.get("Price")));
-//                p.setStock(Integer.parseInt(record.get("Stock")));
-//                p.setImg(record.get("Image"));
-//                p.setShortDesc(record.get("ShortDesc"));
-//                products.add(p);
-//            }
-//
-//            productRepository.saveAll(products);
-//            log.info("Bulk uploaded {} products", products.size());
-//            return ResponseEntity.ok(Map.of("message", "Success", "count", products.size()));
-//
-//        } catch (Exception e) {
-//            log.error("CSV Upload failed", e);
-//            return ResponseEntity.internalServerError().body("Error parsing CSV: " + e.getMessage());
-//        }
-//    }
 
 
     @PostMapping("/bulk-upload")

@@ -8,6 +8,7 @@ const Login = () => {
   const [credentials, setCredentials] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -31,17 +32,13 @@ const Login = () => {
 
       if (res.ok) {
         const userData = await res.json();
-
-        // 1. Save user to global context and localStorage
         login(userData);
 
-        // 2. Role-Based Routing Magic
         if (userData.role === 'ADMIN') {
           navigate('/admin');
         } else if (userData.role === 'DELIVERY') {
           navigate('/delivery');
         } else {
-          // If they came from the Cart page, send them back there! Otherwise, go Home.
           const destination = location.state?.from || '/';
           navigate(destination);
         }
@@ -60,9 +57,10 @@ const Login = () => {
     <div className="auth-container">
       <div className="auth-card animate-slide-up">
 
-          <Link to="/" className="auth-back-link">
-                    ← Back to Store
-                  </Link>
+        <Link to="/" className="auth-back-link">
+          ← Back to Store
+        </Link>
+
         <div className="auth-header">
           <h2 onClick={() => navigate('/')} style={{cursor: 'pointer'}}>Utensil<span>Pro</span></h2>
           <p>Welcome back! Please enter your details.</p>
@@ -85,14 +83,24 @@ const Login = () => {
 
           <div className="form-group">
             <label>Password</label>
-            <input
-              type="password"
-              name="password"
-              placeholder="••••••••"
-              value={credentials.password}
-              onChange={handleChange}
-              required
-            />
+            <div className="password-wrapper">
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                placeholder="••••••••"
+                value={credentials.password}
+                onChange={handleChange}
+                required
+              />
+              <button
+                type="button"
+                className="password-toggle-btn"
+                onClick={() => setShowPassword(!showPassword)}
+                tabIndex="-1"
+              >
+                {showPassword ? "🙈" : "👁️"}
+              </button>
+            </div>
           </div>
 
           <button type="submit" className="btn-auth-primary" disabled={isLoading}>

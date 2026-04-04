@@ -1,34 +1,38 @@
 // src/pages/Profile.jsx
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import CustomerNavbar from '../components/CustomerNavbar';
-import { Link } from 'react-router-dom';
-import './Storefront.css';
+import OrderDetailsModal from '../components/profile/OrderDetailsModal';
+import './Profile.css';
 
 const Profile = () => {
- const { user, login, logout } = useAuth();
+  const { user, login, logout } = useAuth();
   const navigate = useNavigate();
 
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('active'); // 'active' or 'history'
-// Settings Form State
-  const [formData, setFormData] = useState({
-    name: user?.name || '',
-    phone: user?.phone || '',
-    address: user?.address || ''
-  });
-const [isSaving, setIsSaving] = useState(false);
-  const [saveMessage, setSaveMessage] = useState('');
-  // Security Redirect: If a guest tries to access /profile, kick them to login
+  const [activeTab, setActiveTab] = useState('active');
+
+  const [formData, setFormData] = useState({ name: '', phone: '', address: '', email: '', password: '' });
+  const [isSaving, setIsSaving] = useState(false);
+  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
+
+  // 👉 NEW: Viewing Details State
+  const [viewingOrder, setViewingOrder] = useState(null);
+
+  const [cancellingOrder, setCancellingOrder] = useState(null);
+  const [deletingOrder, setDeletingOrder] = useState(null);
+
+  const showToast = (message, type = 'success') => {
+    setToast({ visible: true, message, type });
+    setTimeout(() => setToast({ visible: false, message: '', type: 'success' }), 3000);
+  };
+
   useEffect(() => {
-    if (!user) {
-      navigate('/login');
-    }
+    if (!user) navigate('/login');
+    else setFormData({ name: user.name || '', phone: user.phone || '', address: user.address || '', email: user.email || '', password: '' });
   }, [user, navigate]);
 
-  // Fetch the user's specific orders
   useEffect(() => {
     const fetchMyOrders = async () => {
       if (!user) return;
@@ -36,246 +40,238 @@ const [isSaving, setIsSaving] = useState(false);
         const res = await fetch(`http://localhost:8080/api/orders/customer/${user.id}`);
         if (res.ok) {
           const data = await res.json();
-          setOrders(data);
+          setOrders(data.sort((a, b) => b.id - a.id));
         }
-      } catch (err) {
-        console.error("Failed to fetch orders:", err);
-      } finally {
-        setIsLoading(false);
-      }
+      } catch (err) { console.error("Failed to fetch orders."); }
+      finally { setIsLoading(false); }
     };
     fetchMyOrders();
   }, [user]);
 
-  if (!user) return null; // Prevent flicker before redirect
+  if (!user) return null;
 
-  // Filter orders based on the active tab
-  const activeOrders = orders.filter(o => ['PENDING', 'OUT_FOR_DELIVERY'].includes(o.status));
+  const activeOrders = orders.filter(o => ['PENDING', 'PACKED', 'OUT_FOR_DELIVERY'].includes(o.status));
   const pastOrders = orders.filter(o => ['COMPLETED', 'DELIVERED', 'CANCELLED'].includes(o.status));
 
-  const displayOrders = activeTab === 'active' ? activeOrders : pastOrders;
-// Handle Profile Update
+  const handleLogout = () => { logout(); navigate('/login'); };
+
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
     setIsSaving(true);
-    setSaveMessage('');
+    const payload = { ...formData };
+    if (!payload.password) delete payload.password;
 
     try {
       const res = await fetch(`http://localhost:8080/api/users/${user.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
       });
-
       if (res.ok) {
         const updatedUser = await res.json();
-        login(updatedUser); // Instantly updates the Navbar and Global State!
-        setSaveMessage('✅ Profile updated successfully!');
-        setTimeout(() => setSaveMessage(''), 3000);
-      } else {
-        setSaveMessage('❌ Failed to update profile.');
-      }
-    } catch (err) {
-      setSaveMessage('❌ Server error.');
-    } finally {
-      setIsSaving(false);
-    }
+        login(updatedUser);
+        setFormData(prev => ({ ...prev, password: '' }));
+        showToast("Profile updated successfully!");
+      } else showToast("Failed to update profile.", "error");
+    } catch (err) { showToast("Server error.", "error"); }
+    finally { setIsSaving(false); }
   };
-  // Helper function for status badge colors
+
+  const confirmCancelOrder = async () => {
+    try {
+      const res = await fetch(`http://localhost:8080/api/orders/${cancellingOrder.id}/status?status=CANCELLED`, { method: 'PATCH' });
+      if (res.ok) {
+        setOrders(orders.map(o => o.id === cancellingOrder.id ? { ...o, status: 'CANCELLED' } : o));
+        showToast("Order cancelled.");
+        if (viewingOrder && viewingOrder.id === cancellingOrder.id) setViewingOrder(null);
+      }
+    } catch (err) { showToast("Failed to cancel order.", "error"); }
+    finally { setCancellingOrder(null); }
+  };
+
+  const confirmDeleteOrder = async () => {
+    try {
+      const res = await fetch(`http://localhost:8080/api/orders/${deletingOrder.id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setOrders(orders.filter(o => o.id !== deletingOrder.id));
+        showToast("Order deleted from history.");
+        if (viewingOrder && viewingOrder.id === deletingOrder.id) setViewingOrder(null);
+      }
+    } catch (err) { showToast("Failed to delete order.", "error"); }
+    finally { setDeletingOrder(null); }
+  };
+
+  const handlePrintInvoice = (order) => {
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <html><head><title>Invoice - ${order.id}</title>
+      <style>body { font-family: 'Arial', sans-serif; padding: 40px; color: #333; } .header { display: flex; justify-content: space-between; border-bottom: 2px solid #eee; padding-bottom: 20px; } .items { width: 100%; border-collapse: collapse; margin-top: 30px; } .items th, .items td { border-bottom: 1px solid #eee; padding: 12px; text-align: left; } .total { text-align: right; font-size: 1.5rem; font-weight: bold; margin-top: 20px; }</style>
+      </head><body>
+      <div class="header"><div><h1>UtensilPro</h1><p>Official Tax Invoice</p></div><div style="text-align: right;"><p><strong>Order ID:</strong> ${order.id}</p><p><strong>Date:</strong> ${new Date(order.orderDate).toLocaleDateString()}</p></div></div>
+      <h3>Billed To: ${order.customerName}</h3><p>${order.address || 'Store Pickup'}</p>
+      <table class="items"><tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr>
+      ${order.itemsList.map(item => `<tr><td>${item.name}</td><td>${item.qty}</td><td>₹${item.price}</td><td>₹${item.price * item.qty}</td></tr>`).join('')}
+      </table><div class="total">Grand Total: ₹${order.total}</div>
+      </body></html>
+    `);
+    printWindow.document.close(); printWindow.print();
+  };
+
   const getStatusBadge = (status) => {
     switch (status) {
-      case 'PENDING': return <span style={{ background: '#fef3c7', color: '#d97706', padding: '6px 12px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 'bold' }}>⏳ Processing</span>;
-      case 'OUT_FOR_DELIVERY': return <span style={{ background: '#dbeafe', color: '#2563eb', padding: '6px 12px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 'bold' }}>🚚 Out for Delivery</span>;
+      case 'PENDING': return <span className="prof-badge" style={{ background: '#fef3c7', color: '#d97706' }}>⏳ Processing</span>;
+      case 'PACKED': return <span className="prof-badge" style={{ background: '#e0e7ff', color: '#4f46e5' }}>📦 Packed</span>;
+      case 'OUT_FOR_DELIVERY': return <span className="prof-badge" style={{ background: '#dbeafe', color: '#2563eb' }}>🚚 Out for Delivery</span>;
       case 'COMPLETED':
-      case 'DELIVERED': return <span style={{ background: '#d1fae5', color: '#059669', padding: '6px 12px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 'bold' }}>✅ Delivered</span>;
-      case 'CANCELLED': return <span style={{ background: '#fee2e2', color: '#ef4444', padding: '6px 12px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 'bold' }}>❌ Cancelled</span>;
-      default: return <span className="category-pill">{status}</span>;
+      case 'DELIVERED': return <span className="prof-badge" style={{ background: '#d1fae5', color: '#059669' }}>✅ Delivered</span>;
+      case 'CANCELLED': return <span className="prof-badge" style={{ background: '#fee2e2', color: '#ef4444' }}>❌ Cancelled</span>;
+      default: return <span className="prof-badge">{status}</span>;
     }
   };
-// 👉 NEW: Function to trigger a clean print window for the invoice
-const handlePrintInvoice = (order) => {
-  const printWindow = window.open('', '_blank');
-  printWindow.document.write(`
-    <html>
-      <head>
-        <title>Invoice - ${order.id}</title>
-        <style>
-          body { font-family: 'Arial', sans-serif; padding: 40px; color: #333; }
-          .header { display: flex; justify-content: space-between; border-bottom: 2px solid #eee; padding-bottom: 20px; }
-          .items { width: 100%; border-collapse: collapse; margin-top: 30px; }
-          .items th, .items td { border-bottom: 1px solid #eee; padding: 12px; text-align: left; }
-          .total { text-align: right; font-size: 1.5rem; font-weight: bold; margin-top: 20px; }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <div>
-            <h1>UtensilPro</h1>
-            <p>Official Tax Invoice</p>
-          </div>
-          <div style="text-align: right;">
-            <p><strong>Order ID:</strong> ${order.id}</p>
-            <p><strong>Date:</strong> ${new Date(order.orderDate).toLocaleDateString()}</p>
-          </div>
-        </div>
-        <h3>Billed To: ${order.customerName}</h3>
-        <p>${order.address || 'Store Pickup'}</p>
 
-        <table class="items">
-          <tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr>
-          ${order.itemsList.map(item => `
-            <tr>
-              <td>${item.name}</td>
-              <td>${item.qty}</td>
-              <td>₹${item.price}</td>
-              <td>₹${item.price * item.qty}</td>
-            </tr>
-          `).join('')}
-        </table>
-
-        <div class="total">Grand Total: ₹${order.total}</div>
-        <p style="text-align: center; margin-top: 50px; color: #888;">Thank you for shopping with UtensilPro!</p>
-      </body>
-    </html>
-  `);
-  printWindow.document.close();
-  printWindow.print();
-};
   return (
-    <div className="storefront-container">
-      <CustomerNavbar />
+    <div className="profile-page-wrapper">
 
-      <main className="store-main" style={{ paddingTop: '40px', maxWidth: '1000px', margin: '0 auto' }}>
 
-       {/* PROFILE HEADER */}
-               <div style={{ backgroundColor: 'white', padding: '40px', borderRadius: '16px', border: '1px solid #e2e8f0', marginBottom: '30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                 <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                   <div style={{ width: '80px', height: '80px', backgroundColor: '#0f172a', color: 'white', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '2.5rem', fontWeight: 'bold' }}>
-                     {user.name.charAt(0).toUpperCase()}
-                   </div>
-                   <div>
-                     <h1 style={{ margin: '0 0 5px 0', fontSize: '2rem', color: '#0f172a' }}>{user.name}</h1>
-                     <p style={{ margin: 0, color: '#64748b', fontSize: '1.1rem' }}>{user.email} | {user.phone}</p>
-                   </div>
-                 </div>
-                 <button onClick={() => { logout(); navigate('/'); }} style={{ background: '#fee2e2', color: '#ef4444', border: '1px solid #fca5a5', padding: '10px 20px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>
-                   Sign Out
-                 </button>
-               </div>
+      <div className="profile-container animate-fade-in">
+        <div className="profile-dashboard">
 
-               {/* TAB NAVIGATION */}
-               <div style={{ display: 'flex', gap: '15px', marginBottom: '25px', borderBottom: '2px solid #e2e8f0' }}>
-                 <button onClick={() => setActiveTab('active')} style={{ background: 'none', border: 'none', padding: '15px 20px', fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer', color: activeTab === 'active' ? '#3b82f6' : '#64748b', borderBottom: activeTab === 'active' ? '3px solid #3b82f6' : '3px solid transparent', marginBottom: '-2px' }}>
-                   Active Orders ({activeOrders.length})
-                 </button>
-                 <button onClick={() => setActiveTab('history')} style={{ background: 'none', border: 'none', padding: '15px 20px', fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer', color: activeTab === 'history' ? '#3b82f6' : '#64748b', borderBottom: activeTab === 'history' ? '3px solid #3b82f6' : '3px solid transparent', marginBottom: '-2px' }}>
-                   Order History ({pastOrders.length})
-                 </button>
-                 <button onClick={() => setActiveTab('settings')} style={{ background: 'none', border: 'none', padding: '15px 20px', fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer', color: activeTab === 'settings' ? '#3b82f6' : '#64748b', borderBottom: activeTab === 'settings' ? '3px solid #3b82f6' : '3px solid transparent', marginBottom: '-2px' }}>
-                   ⚙️ Account Settings
-                 </button>
-               </div>
+          <aside className="profile-sidebar">
+            <div className="sidebar-user-info">
+              <div className="sidebar-avatar">{user.name.charAt(0).toUpperCase()}</div>
+              <h2>{user.name}</h2>
+              <p>{user.email}</p>
+            </div>
+            <div className="sidebar-nav">
+              <button className={`sidebar-nav-btn ${activeTab === 'active' ? 'active' : ''}`} onClick={() => setActiveTab('active')}>
+                Active Orders <span className="nav-badge">{activeOrders.length}</span>
+              </button>
+              <button className={`sidebar-nav-btn ${activeTab === 'history' ? 'active' : ''}`} onClick={() => setActiveTab('history')}>
+                Order History <span className="nav-badge">{pastOrders.length}</span>
+              </button>
+              <button className={`sidebar-nav-btn ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => setActiveTab('settings')}>
+                Account Settings
+              </button>
+            </div>
+            <button className="btn-sidebar-logout" onClick={handleLogout}>Sign Out</button>
+          </aside>
 
-               {/* --- SETTINGS TAB --- */}
-               {activeTab === 'settings' && (
-                 <div className="animate-slide-up" style={{ backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e2e8f0', padding: '30px' }}>
-                   <h2 style={{ margin: '0 0 20px 0', fontSize: '1.5rem', color: '#0f172a' }}>Personal Information</h2>
+          <main className="profile-main-content">
 
-                   {saveMessage && <div style={{ padding: '10px', marginBottom: '20px', borderRadius: '8px', backgroundColor: saveMessage.includes('✅') ? '#d1fae5' : '#fee2e2', color: saveMessage.includes('✅') ? '#065f46' : '#991b1b', fontWeight: 'bold' }}>{saveMessage}</div>}
+            {activeTab === 'settings' && (
+              <div className="animate-slide-up">
+                <div className="section-header">
+                  <h1>Account Settings</h1>
+                  <p>Update your personal details, email, and password.</p>
+                </div>
+                <form className="settings-form-grid" onSubmit={handleUpdateProfile}>
+                  <div className="form-row">
+                    <div className="form-group"><label>Full Name</label><input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required /></div>
+                    <div className="form-group"><label>Phone Number</label><input type="tel" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} required /></div>
+                  </div>
+                  <div className="form-group" style={{ marginBottom: '20px' }}>
+                    <label>Default Delivery Address</label>
+                    <textarea rows="3" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} />
+                  </div>
+                  <h3 className="password-section-header">Login Credentials</h3>
+                  <div className="form-row">
+                    <div className="form-group"><label>Email Address</label><input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required /></div>
+                    <div className="form-group"><label>New Password (Optional)</label><input type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} placeholder="Leave blank to keep current" /></div>
+                  </div>
+                  <button type="submit" className="btn-save-profile" disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Profile'}</button>
+                </form>
+              </div>
+            )}
 
-                   <form onSubmit={handleUpdateProfile} style={{ display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '600px' }}>
-                     <div>
-                       <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', color: '#475569' }}>Full Name</label>
-                       <input type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1' }} required />
-                     </div>
+            {activeTab !== 'settings' && (
+              <div className="animate-slide-up">
+                <div className="section-header">
+                  <h1>{activeTab === 'active' ? 'Active Orders' : 'Order History'}</h1>
+                  <p>{activeTab === 'active' ? 'Track the live status of your deliveries.' : 'Review past purchases and print invoices.'}</p>
+                </div>
 
-                     <div>
-                       <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', color: '#475569' }}>Phone Number</label>
-                       <input type="tel" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1' }} required />
-                     </div>
-
-                     <div>
-                       <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', color: '#475569' }}>Default Delivery Address</label>
-                       <textarea rows="4" value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} placeholder="123 Main St, City, State, ZIP..." style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1', resize: 'vertical' }} />
-                       <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: '5px 0 0 0' }}>This address will be auto-filled at checkout.</p>
-                     </div>
-
-                     <button type="submit" disabled={isSaving} style={{ backgroundColor: '#0f172a', color: 'white', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer', border: 'none', marginTop: '10px' }}>
-                       {isSaving ? 'Saving...' : 'Save Changes'}
-                     </button>
-                   </form>
-                 </div>
-               )}
-        {isLoading ? (
-                  <div className="loading-state"><div className="spinner"></div></div>
-                ) : displayOrders.length === 0 ? (
-                  <div className="empty-state">/*... existing empty state ...*/</div>
+                {isLoading ? <p>Loading orders...</p> : (activeTab === 'active' ? activeOrders : pastOrders).length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '60px 20px', border: '1px dashed #cbd5e1', borderRadius: '16px', background: 'white' }}>
+                    <span style={{ fontSize: '4rem', display: 'block', marginBottom: '15px' }}>{activeTab === 'active' ? '🚚' : '🕰️'}</span>
+                    <h3>Nothing here yet.</h3>
+                    <Link to="/shop" style={{ display: 'inline-block', marginTop: '15px', background: '#0f172a', color: 'white', padding: '12px 25px', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold' }}>Browse Store</Link>
+                  </div>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                    {displayOrders.map(order => (
-                      <div key={order.id} className="animate-slide-up" style={{ backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e2e8f0', padding: '25px' }}>
+                  (activeTab === 'active' ? activeOrders : pastOrders).map(order => (
 
-                        {/* Order Card Header */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid #f1f5f9', paddingBottom: '15px', marginBottom: '15px', flexWrap: 'wrap', gap: '15px' }}>
-                          <div>
-                            <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 'bold' }}>Order ID: {order.id.substring(0, 8)}...</span>
-                            <p style={{ margin: '5px 0 0 0', color: '#0f172a', fontWeight: 'bold' }}>Placed on: {new Date(order.orderDate).toLocaleDateString()}</p>
-                                                                                             {/* 👉 NEW: Show the Delivery PIN to the customer if it's out for delivery! */}
-                                                                                                                 {order.status === 'OUT_FOR_DELIVERY' && (
-                                                                                                                   <div style={{ marginTop: '15px', padding: '10px 15px', backgroundColor: '#eff6ff', borderLeft: '4px solid #3b82f6', borderRadius: '4px' }}>
-                                                                                                                     <p style={{ margin: 0, fontSize: '0.9rem', color: '#1e40af', fontWeight: 'bold' }}>
-                                                                                                                       Delivery OTP: <span style={{ fontSize: '1.2rem', letterSpacing: '2px', backgroundColor: 'white', padding: '2px 8px', borderRadius: '4px', border: '1px solid #bfdbfe' }}>{order.verificationPin}</span>
-                                                                                                                    </p>
-                                                                                                                     <p style={{ margin: '5px 0 0 0', fontSize: '0.8rem', color: '#3b82f6' }}>Please provide this code to the delivery rider.</p>
-                                                                                                                   </div>
-                                                                                                                 )}
-                            {/* 👉 NEW: Print Invoice Button (Only for completed/delivered orders) */}
-                            {['COMPLETED', 'DELIVERED'].includes(order.status) && (
-                              <button
-                                onClick={() => handlePrintInvoice(order)}
-                                style={{ marginTop: '10px', background: 'none', border: '1px solid #cbd5e1', padding: '5px 10px', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 'bold' }}
-                              >
-                                🖨️ Print Invoice
-                              </button>
-                            )}
-                          </div>
-                          <div style={{ textAlign: 'right' }}>
-                            <div style={{ marginBottom: '10px' }}>{getStatusBadge(order.status)}</div>
-                            <span style={{ fontSize: '1.3rem', fontWeight: '900', color: '#10b981' }}>₹{order.total.toLocaleString()}</span>
-                          </div>
-                        </div>
-
-                        {/* Order Items List */}
+                    /* 👉 COMPACT ORDER CARD (Clicking "View Details" opens the modal) */
+                    <div key={order.id} className="prof-order-card">
+                      <div className="prof-order-header" style={{ border: 'none', padding: 0, margin: 0 }}>
                         <div>
-                          <h4 style={{ margin: '0 0 10px 0', fontSize: '0.95rem', color: '#64748b', textTransform: 'uppercase' }}>Items</h4>
-                          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            {order.itemsList.map((item, idx) => (
-                              <li key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1rem' }}>
-
-                                {/* 👉 NEW: Clickable Product Link */}
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                  <span style={{ color: '#64748b', fontWeight: 'bold' }}>{item.qty}x</span>
-                                  <Link
-                                    to={`/product/${item.productId}`}
-                                    style={{ color: '#0f172a', textDecoration: 'none', fontWeight: '600' }}
-                                    onMouseOver={(e) => e.target.style.textDecoration = 'underline'}
-                                    onMouseOut={(e) => e.target.style.textDecoration = 'none'}
-                                  >
-                                    {item.name}
-                                  </Link>
-                                </div>
-
-                                <span style={{ fontWeight: '500' }}>₹{(item.price * item.qty).toLocaleString()}</span>
-                              </li>
-                            ))}
-                          </ul>
+                          <span className="prof-order-id">Order #{order.id.toString().substring(0, 8).toUpperCase()}</span>
+                          <p className="prof-order-meta">{new Date(order.orderDate).toLocaleDateString()} • {order.itemsList.length} Items</p>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          {getStatusBadge(order.status)}
+                          <div className="prof-order-total">₹{order.total.toLocaleString()}</div>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
 
-      </main>
+                      <div className="prof-order-actions" style={{ marginTop: '20px' }}>
+                        <button className="btn-save-profile" style={{ padding: '8px 20px', margin: 0, fontSize: '0.95rem' }} onClick={() => setViewingOrder(order)}>
+                          👁️ View Details
+                        </button>
+                        {['COMPLETED', 'DELIVERED'].includes(order.status) && (
+                          <button className="prof-btn-outline" onClick={() => handlePrintInvoice(order)}>🖨️ Invoice</button>
+                        )}
+                        {order.status === 'PENDING' && (
+                          <button className="prof-btn-outline prof-btn-danger" onClick={() => setCancellingOrder(order)}>✕ Cancel</button>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </main>
+        </div>
+      </div>
+{/* ================= DETAILED ORDER MODAL ================= */}
+     {/* ================= SEPARATE UI: ORDER DETAILS MODAL ================= */}
+           {viewingOrder && (
+             <OrderDetailsModal
+               order={viewingOrder}
+               onClose={() => setViewingOrder(null)}
+               onCancel={(order) => { setViewingOrder(null); setCancellingOrder(order); }}
+               onDelete={(order) => { setViewingOrder(null); setDeletingOrder(order); }}
+               onPrint={handlePrintInvoice}
+             />
+           )}
+      {/* Warning Modals */}
+      {cancellingOrder && (
+        <div className="modal-overlay" style={{ zIndex: 10000 }} onClick={() => setCancellingOrder(null)}>
+          <div className="modal-content-mini animate-slide-up" onClick={e => e.stopPropagation()}>
+            <div className="warning-icon">✕</div>
+            <h2 style={{ color: '#0f172a', fontSize: '1.5rem', marginBottom: '10px' }}>Cancel Order?</h2>
+            <div className="modal-actions">
+              <button className="btn-secondary" onClick={() => setCancellingOrder(null)}>Keep Order</button>
+              <button className="btn-danger" onClick={confirmCancelOrder}>Yes, Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deletingOrder && (
+        <div className="modal-overlay" style={{ zIndex: 10000 }} onClick={() => setDeletingOrder(null)}>
+          <div className="modal-content-mini animate-slide-up" onClick={e => e.stopPropagation()}>
+            <div className="warning-icon">🗑️</div>
+            <h2 style={{ color: '#0f172a', fontSize: '1.5rem', marginBottom: '10px' }}>Delete History?</h2>
+            <div className="modal-actions">
+              <button className="btn-secondary" onClick={() => setDeletingOrder(null)}>Cancel</button>
+              <button className="btn-danger" onClick={confirmDeleteOrder}>Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {toast.visible && (
+        <div style={{ position: 'fixed', bottom: '30px', right: '30px', backgroundColor: toast.type === 'error' ? '#ef4444' : '#10b981', color: 'white', padding: '15px 25px', borderRadius: '12px', fontWeight: 'bold', zIndex: 10000, boxShadow: '0 10px 25px rgba(0,0,0,0.1)', animation: 'slideInRight 0.3s ease-out' }}>
+          {toast.type === 'error' ? '❌' : '✅'} {toast.message}
+        </div>
+      )}
     </div>
   );
 };
