@@ -132,7 +132,6 @@ public class ProductController {
                     // Match the header (ignoring case) to our Java fields
                     switch (header.toLowerCase()) {
                         case "name":
-                        case "product name":
                             p.setName(value);
                             break;
                         case "category":
@@ -142,20 +141,23 @@ public class ProductController {
                             p.setSubcategory(value);
                             break;
                         case "price":
-                        case "mrp": // Automatically map your "MRP" column to Price
                             p.setPrice(new BigDecimal(value));
                             break;
                         case "stock":
                             p.setStock(Integer.parseInt(value));
                             break;
-                        case "image":
-                        case "imgurl": // Automatically map "imgurl" to Image
+                        case "img":
                             p.setImg(value);
                             break;
-                        case "shortdesc":
-                        case "description": // Map "description" to ShortDesc
+                        case "shortDesc":
                             p.setShortDesc(value);
                             break;
+                        case "longDesc":
+                            p.setLongDesc(value);
+                            break;
+                        case "originalPrice":
+                            p.setOriginalPrice(new BigDecimal(value));
+                              break;
                         default:
                             // THE MAGIC: If it's a column Java doesn't recognize (like 'lidtype' or 'material'),
                             // automatically save it as a dynamic attribute in MongoDB!

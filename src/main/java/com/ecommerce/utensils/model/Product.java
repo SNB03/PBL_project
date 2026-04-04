@@ -39,6 +39,7 @@ public class Product {
 
     private String img;
     private String shortDesc;
+
     private String longDesc;
 
     private BigDecimal originalPrice;
