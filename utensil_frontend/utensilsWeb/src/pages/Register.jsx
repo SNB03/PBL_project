@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './Auth.css';
+import Navbar from '../components/layout/Navbar'
 
 const Register = () => {
   const navigate = useNavigate();
@@ -68,6 +69,7 @@ const Register = () => {
 
   return (
     <div className="auth-container">
+        <Navbar/>
       <div className="auth-card animate-slide-up">
         <Link to="/" className="auth-back-link">← Back to Store</Link>
 

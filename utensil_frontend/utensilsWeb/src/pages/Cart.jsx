@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
-// import Navbar from '../components/layout/Navbar'; // 👉 Uses the new global Navbar
+import Navbar from '../components/layout/Navbar'; // 👉 Uses the new global Navbar
 import './Cart.css'; // 👉 Hooks into our new responsive CSS
 
 const Cart = () => {
@@ -132,7 +132,7 @@ const Cart = () => {
 
   return (
     <div className="storefront-container">
-
+<Navbar/>
 
       <main className="store-main">
         {/* LEFT COLUMN: Dynamic Steps */}

@@ -6,8 +6,9 @@
   background-color: #f8fafc;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
-.global-navbar{
-display:none;}
+/*.global-navbar{
+display:none;
+}*/
 /* --- SIDEBAR --- */
 .admin-sidebar {
   width: 260px;

@@ -2,7 +2,6 @@
 import { Routes, Route } from 'react-router-dom';
 
 import Cart from './pages/Cart';
- import Navbar from './components/layout/Navbar';
 import ProductDetails from './pages/ProductDetails'
 import Shop from './pages/Shop'
 import Home from './pages/Home';
@@ -10,12 +9,13 @@ import Login from './pages/Login'
 import Profile  from './pages/Profile'
 import Register from './pages/Register'
 import AdminDashboard from './pages/AdminDashboard'
+// import Footer from './components/layout/Footer';
 
 function App() {
   return (
     <div className="app" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
 
-       <Navbar/>
+{/*        <Navbar/> */}
       <main style={{ flex: 1, width: '100%' }}>
 
         <Routes>
@@ -28,8 +28,9 @@ function App() {
             <Route path="/register" element={<Register/>}/>
              <Route path="/admin" element={<AdminDashboard/>}/>
         </Routes>
-      </main>
 
+      </main>
+{/*    <Footer /> */}
     </div>
   );
 }

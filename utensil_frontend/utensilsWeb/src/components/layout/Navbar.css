@@ -232,3 +232,119 @@
     gap: 15px;
   }
 }
+/* --- OVERLAY --- */
+.drawer-overlay {
+  position: fixed;
+  inset: 0; /* Covers the whole screen */
+  background-color: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(2px);
+  z-index: 900;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease-in-out;
+}
+
+.drawer-overlay.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* --- THE LEFT-SLIDING DRAWER --- */
+.mobile-drawer {
+  position: fixed;
+  top: 0;
+  left: 0; /* Anchors the drawer to the LEFT side */
+  bottom: 0;
+  width: 280px;
+  max-width: 85vw; /* Prevents it from taking up the whole screen on tiny phones */
+  background-color: white;
+  z-index: 999;
+
+  /* Start hidden off-screen to the left */
+  transform: translateX(-100%);
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  display: flex;
+  flex-direction: column;
+  box-shadow: 5px 0 25px rgba(0, 0, 0, 0.15); /* Shadow on the right edge */
+}
+
+/* Slide it into view */
+.mobile-drawer.open {
+  transform: translateX(0);
+}
+
+/* --- INTERIOR STYLING --- */
+.drawer-header {
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.drawer-header .nav-brand {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+.drawer-header .nav-brand span { color: #3b82f6; }
+
+.btn-close-drawer {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.drawer-links {
+  padding: 25px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.drawer-item {
+  text-decoration: none;
+  color: #334155;
+  font-size: 1.1rem;
+  font-weight: 600;
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: color 0.2s;
+}
+
+.drawer-item:hover {
+  color: #3b82f6;
+}
+
+.drawer-footer {
+  padding: 20px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.btn-drawer-logout {
+  width: 100%;
+  padding: 14px;
+  background-color: #fef2f2;
+  color: #ef4444;
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-drawer-logout:hover {
+  background-color: #fee2e2;
+}

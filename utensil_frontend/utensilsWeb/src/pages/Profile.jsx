@@ -4,6 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import OrderDetailsModal from '../components/profile/OrderDetailsModal';
 import './Profile.css';
+import Navbar from '../components/layout/Navbar'
 
 const Profile = () => {
   const { user, login, logout } = useAuth();
@@ -128,8 +129,9 @@ const Profile = () => {
   };
 
   return (
-    <div className="profile-page-wrapper">
 
+    <div className="profile-page-wrapper">
+  <Navbar/>
 
       <div className="profile-container animate-fade-in">
         <div className="profile-dashboard">

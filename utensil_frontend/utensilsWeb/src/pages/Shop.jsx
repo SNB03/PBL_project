@@ -4,6 +4,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import ProductCard from '../components/ui/ProductCard';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import Navbar from '../components/layout/Navbar'
 import './Shop.css';
 
 const Shop = () => {
@@ -184,7 +185,7 @@ const Shop = () => {
 
   return (
     <div className="shop-page-wrapper">
-
+<Navbar/>
 
       <div className="shop-container animate-fade-in">
         <div className="shop-header">

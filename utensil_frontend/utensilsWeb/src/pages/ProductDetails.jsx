@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
-
+import Navbar from '../components/layout/Navbar'
 import FSDPRecommendations from '../components/recommendations/FSDPRecommendations';
 import './ProductDetails.css';
 
@@ -88,7 +88,7 @@ const ProductDetails = () => {
 
   return (
     <div className="product-page-wrapper">
-
+<Navbar/>
 
       <div className="product-container animate-fade-in">
 

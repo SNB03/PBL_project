@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './Auth.css';
+import Navbar from '../components/layout/Navbar'
 
 const Login = () => {
   const [credentials, setCredentials] = useState({ email: '', password: '' });
@@ -54,7 +55,10 @@ const Login = () => {
   };
 
   return (
+      <>
+       <Navbar/>
     <div className="auth-container">
+
       <div className="auth-card animate-slide-up">
 
         <Link to="/" className="auth-back-link">
@@ -113,7 +117,9 @@ const Login = () => {
         </div>
       </div>
     </div>
+    </>
   );
+
 };
 
 export default Login;

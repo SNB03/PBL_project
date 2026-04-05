@@ -5,6 +5,7 @@ import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import MobileDrawer from './MobileDrawer';
 import './Navbar.css';
+import CategoryModal from '../ui/CategoryModal';
 import CartDrawer from '../CartDrawer';
 
 const Navbar = () => {
@@ -12,6 +13,7 @@ const Navbar = () => {
   const { user } = useAuth();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 const [isCartOpen, setIsCartOpen] = useState(false);
+const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   // Calculate total items in cart (sum of quantities, not just unique items)
   const cartItemCount = cartItems.reduce((total, item) => total + item.qty, 0);
 
@@ -29,7 +31,13 @@ const [isCartOpen, setIsCartOpen] = useState(false);
           <div className="nav-links-desktop">
             <Link to="/" className="nav-item">Home</Link>
             <Link to="/shop" className="nav-item">Shop</Link>
-            <Link to="/categories" className="nav-item">Categories</Link>
+         <button
+                       className="nav-item"
+                       onClick={() => setIsCategoryModalOpen(true)}
+                       style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 'inherit', padding: 0 }}
+                     >
+                       Categories
+                     </button>
 
             {user?.role === 'ADMIN' && <Link to="/admin" className="nav-item">Admin</Link>}
             {user?.role === 'DELIVERY' && <Link to="/delivery" className="nav-item">Rider</Link>}
@@ -79,7 +87,10 @@ const [isCartOpen, setIsCartOpen] = useState(false);
               isOpen={isCartOpen}
               onClose={() => setIsCartOpen(false)}
             />
-
+<CategoryModal
+        isOpen={isCategoryModalOpen}
+        onClose={() => setIsCategoryModalOpen(false)}
+      />
     </>
 
   );
