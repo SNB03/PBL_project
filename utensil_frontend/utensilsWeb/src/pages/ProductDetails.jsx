@@ -32,16 +32,14 @@ const ProductDetails = () => {
     const fetchProductData = async () => {
       setLoading(true);
       try {
-        // 1. Fetch Product
         const res = await fetch(`http://localhost:8080/api/products/${id}`);
         if (res.ok) {
           const data = await res.json();
           data.normalizedAttrs = data.attributes || data.attrs || data.specs || {};
           setProduct(data);
-          setQty(1);
+          setQty(data.stock > 0 ? 1 : 0);
         }
 
-        // 2. Security Check: Did user buy this? (Restored your logic exactly)
         if (user) {
           const orderRes = await fetch(`http://localhost:8080/api/orders/customer/${user.id}`);
           if (orderRes.ok) {
@@ -77,8 +75,6 @@ const ProductDetails = () => {
   const submitReview = async (e) => {
     e.preventDefault();
     if (!hasPurchased) return alert("You can only review products you have purchased.");
-
-    // Note: You will need a Spring Boot POST endpoint for this!
     showToast(`Review submitted! Rating: ${rating} Stars.`);
     setReviewText('');
   };
@@ -86,23 +82,41 @@ const ProductDetails = () => {
   if (loading) return <div style={{ textAlign: 'center', padding: '100px' }}>Loading...</div>;
   if (!product) return <div style={{ textAlign: 'center', padding: '100px' }}>Product not found</div>;
 
+  // ==========================================
+  // 🧠 SMART PRICING LOGIC
+  // Automatically fixes bad DB entries (e.g. if Price > Original Price)
+  // ==========================================
+  let sellingPrice = Number(product.price) || 0;
+  let mrp = Number(product.originalPrice) || 0;
+  let discountPct = 0;
+
+  if (mrp > 0 && mrp !== sellingPrice) {
+    if (sellingPrice > mrp) {
+      // Admin swapped them by mistake in the DB, let's fix it on the fly
+      let temp = sellingPrice;
+      sellingPrice = mrp;
+      mrp = temp;
+    }
+    // Calculate precise discount percentage
+    discountPct = Math.round(((mrp - sellingPrice) / mrp) * 100);
+  } else {
+    // No valid discount exists
+    mrp = 0;
+  }
+
   return (
     <div className="product-page-wrapper">
-<Navbar/>
+      <Navbar/>
 
       <div className="product-container animate-fade-in">
 
-        {/* 👉 EASY NAVIGATION BAR */}
         <div className="nav-breadcrumb-bar">
-          <button className="btn-back" onClick={() => navigate(-1)}>
-            ← Back
-          </button>
-          <div className="breadcrumb" style={{ margin: 0 }}>
+          <button className="btn-back" onClick={() => navigate(-1)}>← Back</button>
+          <div className="breadcrumb">
             <Link to="/">Home</Link> / <Link to="/shop">Shop</Link> / {product.category}
           </div>
         </div>
 
-        {/* MAIN PRODUCT INFO */}
         <div className="product-main-grid">
 
           <div className="product-gallery">
@@ -124,25 +138,55 @@ const ProductDetails = () => {
               <span className="product-badge" style={{ backgroundColor: '#fee2e2', color: '#ef4444' }}>Out of Stock</span>
             )}
 
-            <div className="product-price-box">
-              <span className="product-price">₹{product.price.toLocaleString()}</span>
-              {product.originalPrice && (
-                <span className="product-mrp">MRP: ₹{product.originalPrice.toLocaleString()}</span>
-              )}
-            </div>
+           {/* --- SMART PRICING UI --- */}
+           <div className="product-price-row">
+             <div className="main-price-flex">
+               <span className="current-price">₹{sellingPrice.toLocaleString()}</span>
 
-            <p className="product-desc">
-              {product.description || product.shortDesc || "Upgrade your kitchen experience with this premium utensil."}
-            </p>
+               {/* Only show MRP and Tag if there is a real discount */}
+               {discountPct > 0 && (
+                 <>
+                   <span className="strike-mrp">₹{mrp.toLocaleString()}</span>
+                   <span className="discount-tag">{discountPct}% OFF</span>
+                 </>
+               )}
+             </div>
+             <p className="inclusive-tax">Inclusive of all taxes</p>
+           </div>
+
+           {/* --- CLEAN DESCRIPTION SECTION --- */}
+           <div className="description-container">
+             {product.shortDesc && (
+               <p className="short-description">{product.shortDesc}</p>
+             )}
+             <p className="main-description">
+               {product.description || "Premium quality kitchenware designed for durability and elegant dining."}
+             </p>
+           </div>
 
             <div className="purchase-box">
               <div className="qty-row">
                 <span style={{ fontWeight: '600', color: '#475569' }}>Quantity:</span>
+
                 <div className="qty-controls">
-                  <button onClick={() => setQty(Math.max(1, qty - 1))}>-</button>
+                  <button
+                    onClick={() => setQty(Math.max(1, qty - 1))}
+                    disabled={qty <= 1 || product.stock === 0}
+                  >
+                    -
+                  </button>
                   <span>{qty}</span>
-                  <button onClick={() => setQty(qty + 1)}>+</button>
+                  <button
+                    onClick={() => setQty(Math.min(product.stock, qty + 1))}
+                    disabled={qty >= product.stock || product.stock === 0}
+                  >
+                    +
+                  </button>
                 </div>
+
+                {qty >= product.stock && product.stock > 0 && (
+                  <span className="stock-warning">Max stock reached</span>
+                )}
               </div>
 
               <div className="action-buttons">
@@ -158,29 +202,31 @@ const ProductDetails = () => {
             {Object.keys(product.normalizedAttrs).length > 0 && (
               <table className="specs-table">
                 <tbody>
-                  {Object.entries(product.normalizedAttrs).map(([key, val]) => (
-                    <tr key={key}>
-                      <th>{key.toUpperCase()}</th>
-                      <td>{val}</td>
-                    </tr>
-                  ))}
+                  {Object.entries(product.normalizedAttrs).map(([key, val]) => {
+                    if (key.toLowerCase() === 'description' || String(val).length > 50) return null;
+                    return (
+                      <tr key={key}>
+                        <th>{key.toUpperCase()}</th>
+                        <td>{val}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             )}
           </div>
         </div>
 
-        {/* 👉 RESTORED REVIEWS SECTION */}
         <div className="reviews-section">
-          <h2>Customer Reviews</h2>
+          <h2 style={{marginTop: 0, marginBottom: '25px', color: '#0f172a'}}>Customer Reviews</h2>
 
           {hasPurchased ? (
             <form className="review-form-card" onSubmit={submitReview}>
-              <h4 style={{ margin: '0 0 15px 0' }}>Write a Review</h4>
+              <h4 style={{ margin: '0 0 15px 0', color: '#334155' }}>Write a Review</h4>
               <select
                 value={rating}
                 onChange={(e) => setRating(Number(e.target.value))}
-                style={{ padding: '10px', marginBottom: '15px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                style={{ padding: '10px', marginBottom: '15px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none' }}
               >
                 <option value="5">⭐⭐⭐⭐⭐ (5/5)</option>
                 <option value="4">⭐⭐⭐⭐ (4/5)</option>
@@ -211,7 +257,7 @@ const ProductDetails = () => {
                   <div style={{ fontWeight: 'bold', color: '#0f172a' }}>
                     {rev.userName} <span style={{ color: '#f59e0b', marginLeft: '10px' }}>{"⭐".repeat(rev.rating)}</span>
                   </div>
-                  <p style={{ color: '#475569', margin: '5px 0 0 0', lineHeight: '1.5' }}>{rev.comment}</p>
+                  <p style={{ color: '#475569', margin: '8px 0 0 0', lineHeight: '1.5' }}>{rev.comment}</p>
                 </div>
               ))
             ) : (
@@ -220,7 +266,6 @@ const ProductDetails = () => {
           </div>
         </div>
 
-        {/* REAL FSDP RECOMMENDATION ENGINE */}
         <FSDPRecommendations
           currentCategory={product.category}
           currentProductId={product.id}
@@ -229,7 +274,6 @@ const ProductDetails = () => {
 
       </div>
 
-      {/* TOAST NOTIFICATION */}
       {toast.visible && (
         <div style={{ position: 'fixed', bottom: '30px', right: '30px', backgroundColor: '#10b981', color: 'white', padding: '15px 25px', borderRadius: '12px', fontWeight: 'bold', zIndex: 1000, boxShadow: '0 10px 25px rgba(0,0,0,0.1)', animation: 'slideInRight 0.3s ease-out' }}>
           ✅ {toast.message}

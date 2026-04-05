@@ -32,16 +32,24 @@
 /* --- Layout Grid --- */
 .shop-layout {
   display: flex;
-  gap: 40px;
-  align-items: flex-start;
+  gap: 30px;
+  align-items: flex-start; /* CRITICAL for sticky to work */
+  position: relative;
 }
 
-/* --- Left: Sidebar Filters --- */
+/* --- Left: Sidebar Filters (Sticky) --- */
 .shop-sidebar {
-  flex: 0 0 250px;
+  width: 280px;
+  flex-shrink: 0;
   position: sticky;
-  top: 100px;
+  top: 90px; /* Offset for your Navbar height */
+  max-height: calc(100vh - 110px);
+  overflow-y: auto;
 }
+
+/* Hide scrollbar for a cleaner look */
+.shop-sidebar::-webkit-scrollbar { width: 6px; }
+.shop-sidebar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
 
 .filter-card {
   background-color: white;
@@ -51,60 +59,89 @@
   box-shadow: 0 4px 6px rgba(0,0,0,0.02);
 }
 
-.filter-card h3 {
-  margin: 0 0 20px 0;
-  color: #0f172a;
-  font-size: 1.2rem;
-  border-bottom: 2px solid #f1f5f9;
-  padding-bottom: 10px;
+/* Filter Dropdowns & Inputs */
+.filter-group {
+  margin-bottom: 20px;
 }
 
-.category-list {
+.filter-group label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: #64748b;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.shop-filter-select, .price-input {
+  width: 100%;
+  padding: 12px 15px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background-color: #f8fafc;
+  color: #0f172a;
+  font-size: 0.95rem;
+  font-weight: 500;
+  outline: none;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.shop-filter-select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 15px center;
+  background-size: 16px;
+}
+
+.shop-filter-select:focus, .price-input:focus {
+  border-color: #3b82f6;
+  background-color: white;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.price-range-inputs {
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: 10px;
 }
 
-.btn-category {
-  background: none;
-  border: none;
-  text-align: left;
-  padding: 12px 15px;
-  border-radius: 8px;
-  font-size: 1.05rem;
-  font-weight: 600;
-  color: #475569;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.btn-category:hover {
-  background-color: #f1f5f9;
-  color: #0f172a;
-}
-
-.btn-category.active {
-  background-color: #0f172a;
-  color: white;
+.price-range-inputs span {
+  color: #64748b;
+  font-weight: bold;
 }
 
 /* --- Right: Main Storefront --- */
 .shop-main {
   flex: 1;
-  min-width: 0; /* Prevents flexbox blowout */
+  min-width: 0;
 }
 
 /* Controls (Search & Sort) */
+/* Update this in your src/pages/Shop.css */
+
 .shop-controls {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 30px;
   gap: 20px;
   flex-wrap: wrap;
+
+  /* 👉 THE MAGIC: Sticky Positioning */
+  position: sticky;
+  top: 67px; /* Adjust this slightly if your Navbar height is different */
+  z-index: 50; /* Keeps it above the product cards */
+
+  /* Background ensures products hide when scrolling behind it */
+  background-color: #f8fafc; /* Matches your page wrapper background */
+
+  /* Padding & Borders for a clean edge */
+  padding: 15px 0 20px 0;
+  margin-bottom: 20px;
+  border-bottom: 1px dashed #cbd5e1;
 }
 
 .shop-search-wrapper {
@@ -152,248 +189,15 @@
   font-family: inherit;
 }
 
-/* The Reusable Product Grid */
-.shop-product-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 25px;
-}
-
-/* --- Empty State --- */
-.shop-empty-state {
-  background-color: white;
-  border-radius: 16px;
-  border: 1px dashed #cbd5e1;
-  padding: 80px 20px;
-  text-align: center;
-}
-
-.shop-empty-state span {
-  font-size: 4rem;
-  display: block;
-  margin-bottom: 15px;
-}
-
-.shop-empty-state h3 {
-  margin: 0 0 10px 0;
-  color: #0f172a;
-  font-size: 1.5rem;
-}
-
-.shop-empty-state p {
-  color: #64748b;
-  margin: 0;
-}
-
-
-/* =========================================
-   📱 MOBILE RESPONSIVENESS
-   ========================================= */
-@media (max-width: 900px) {
-  .shop-layout {
-    flex-direction: column;
-    gap: 20px;
-  }
-
-  .shop-sidebar {
-    width: 100%;
-    flex: none;
-    position: static;
-  }
-
-  .filter-card {
-    padding: 15px;
-  }
-
-  .filter-card h3 {
-    margin-bottom: 10px;
-    border: none;
-  }
-
-  /* Transform vertical list to horizontal scroll on mobile */
-  .category-list {
-    flex-direction: row;
-    overflow-x: auto;
-    padding-bottom: 10px;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .category-list::-webkit-scrollbar {
-    height: 4px;
-  }
-  .category-list::-webkit-scrollbar-thumb {
-    background-color: #cbd5e1;
-    border-radius: 10px;
-  }
-
-  .btn-category {
-    white-space: nowrap;
-    scroll-snap-align: start;
-    padding: 10px 20px;
-    background-color: #f1f5f9;
-  }
-
-  .btn-category.active {
-    background-color: #0f172a;
-  }
-}
-
-@media (max-width: 500px) {
-  .shop-product-grid {
-    grid-template-columns: 1fr; /* Single column on phones */
-  }
-
-  .shop-controls {
-    flex-direction: column;
-    align-items: stretch;
-  }
-}
-/* Add this to your existing Shop.css */
-
-/* --- Subcategories --- */
-.subcategory-section {
-  margin-top: 15px;
-  padding-top: 15px;
-  border-top: 1px dashed #cbd5e1;
-}
-
-.subcategory-section h4 {
-  margin: 0 0 10px 0;
-  font-size: 0.9rem;
-  color: #64748b;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.subcategory-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.btn-subcat {
-  padding: 6px 12px;
-  background-color: #f1f5f9;
-  border: 1px solid #cbd5e1;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #475569;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-subcat:hover {
-  background-color: #e2e8f0;
-}
-
-.btn-subcat.active {
-  background-color: #d35400; /* Brand Orange for active subcategory */
-  color: white;
-  border-color: #d35400;
-}
-
-/* Update mobile layout for subcategories */
-@media (max-width: 900px) {
-  .subcategory-list {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    padding-bottom: 10px;
-    -webkit-overflow-scrolling: touch;
-  }
-  .btn-subcat {
-    white-space: nowrap;
-  }
-}
-/* Add to the bottom of src/pages/Shop.css */
-
-/* --- Dynamic Attribute Filters (Distinguishing Factors) --- */
-.attribute-section {
-  margin-top: 25px;
-  padding-top: 20px;
-  border-top: 1px dashed #cbd5e1;
-}
-
-.attribute-group {
-  margin-bottom: 20px;
-}
-
-.attribute-group h4 {
-  margin: 0 0 10px 0;
-  font-size: 0.95rem;
-  color: #0f172a;
-  text-transform: capitalize;
-}
-
-.attribute-checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
-  font-size: 0.95rem;
-  color: #475569;
-  cursor: pointer;
-  transition: color 0.2s;
-}
-
-.attribute-checkbox-label:hover {
-  color: #0f172a;
-}
-
-.attribute-checkbox-label input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-  accent-color: #d35400; /* Brand Color */
-}
-
-/* Clear Filters Button */
-.btn-clear-filters {
-  width: 100%;
-  padding: 8px;
-  margin-top: 10px;
-  background-color: #f1f5f9;
-  color: #64748b;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: bold;
-  cursor: pointer;
-}
-.btn-clear-filters:hover { background-color: #e2e8f0; color: #0f172a; }
-
-@media (max-width: 900px) {
-  .attribute-section {
-    display: flex;
-    gap: 20px;
-    overflow-x: auto;
-    padding-bottom: 10px;
-  }
-  .attribute-group {
-    min-width: 150px;
-    background: #f8fafc;
-    padding: 10px;
-    border-radius: 8px;
-    border: 1px solid #e2e8f0;
-  }
-}
-
-/* Add to src/pages/Shop.css */
-
 /* --- Categorized Display Headers --- */
 .category-group-section {
   margin-bottom: 50px;
 }
 
-.category-group-section:last-child {
-  margin-bottom: 0;
-}
-
 .category-group-header {
   display: flex;
   align-items: center;
-  gap: 15px;
+  justify-content: space-between;
   margin-bottom: 20px;
   border-bottom: 2px solid #e2e8f0;
   padding-bottom: 10px;
@@ -415,15 +219,61 @@
   font-weight: bold;
 }
 
-/* Ensure the grid fits perfectly inside the sections */
-.category-group-section .shop-product-grid {
+/* The Reusable Product Grid */
+.shop-product-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 25px;
 }
 
-@media (max-width: 500px) {
-  .category-group-header h2 {
-    font-size: 1.4rem;
+/* --- Empty State --- */
+.shop-empty-state {
+  background-color: #f8fafc;
+  border-radius: 12px;
+  border: 1px dashed #cbd5e1;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+/* =========================================
+   📱 MOBILE RESPONSIVENESS
+   ========================================= */
+@media (max-width: 900px) {
+  .shop-layout {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .shop-sidebar {
+    width: 100%;
+    position: static; /* Disable sticky on mobile */
+    max-height: none;
+  }
+
+  .filter-card {
+    padding: 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Put filters side-by-side on tablets */
+    gap: 15px;
+  }
+
+  /* Span the clear button across both columns */
+  .filter-card > button {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 600px) {
+  .filter-card {
+    grid-template-columns: 1fr; /* Stack filters on phones */
+  }
+
+  .shop-product-grid {
+    grid-template-columns: 1fr; /* Single column products on phones */
+  }
+
+  .shop-controls {
+    flex-direction: column;
+    align-items: stretch;
   }
 }

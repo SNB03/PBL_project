@@ -125,6 +125,7 @@ public class ProductController {
                             p.setLongDesc(value);
                             break;
                         case "originalPrice":
+                        case "originalpri":
                             p.setOriginalPrice(new BigDecimal(value));
                               break;
                         default:

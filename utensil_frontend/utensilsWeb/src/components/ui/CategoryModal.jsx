@@ -1,6 +1,7 @@
 // src/components/ui/CategoryModal.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { BiCategory } from 'react-icons/bi'; // 👉 NEW: The single universal icon
 import './CategoryModal.css';
 
 const CategoryModal = ({ isOpen, onClose }) => {
@@ -8,25 +9,13 @@ const CategoryModal = ({ isOpen, onClose }) => {
   const [storeCategories, setStoreCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const getCategoryIcon = (categoryName) => {
-    const cat = categoryName.toLowerCase();
-    if (cat.includes('cook')) return '🍳';
-    if (cat.includes('serve') || cat.includes('jug')) return '🍹';
-    if (cat.includes('din') || cat.includes('plate')) return '🍽️';
-    if (cat.includes('store') || cat.includes('container')) return '🏺';
-    if (cat.includes('tool') || cat.includes('knife')) return '🔪';
-    if (cat.includes('appliance') || cat.includes('electric')) return '⚡';
-    if (cat.includes('glass')) return '🥃';
-    return '🛍️';
-  };
-
   useEffect(() => {
     if (!isOpen || storeCategories.length > 0) return;
 
     const fetchDynamicCategories = async () => {
       setIsLoading(true);
       try {
-        const res = await fetch('http://localhost:8080/api/products');
+        const res = await fetch(`http://localhost:8080/api/products?size=500&t=${Date.now()}`);
         if (res.ok) {
           const data = await res.json();
           const productsArray = Array.isArray(data) ? data : (data.content || []);
@@ -41,10 +30,13 @@ const CategoryModal = ({ isOpen, onClose }) => {
             if (subcat) categoryMap[cat].add(subcat);
           });
 
+          // 👉 NEW: We apply the single React Icon here to every dynamic category
+          const universalIcon = <BiCategory style={{ fontSize: '1.8rem', color: '#3b82f6' }} />;
+
           const formattedCategories = Object.keys(categoryMap).map(catName => ({
             id: catName,
             name: catName,
-            icon: getCategoryIcon(catName),
+            icon: universalIcon,
             subcategories: Array.from(categoryMap[catName]).slice(0, 4)
           }));
 
@@ -77,16 +69,13 @@ const CategoryModal = ({ isOpen, onClose }) => {
     <div className="cat-modal-overlay" onClick={onClose}>
       <div className="cat-modal-content" onClick={(e) => e.stopPropagation()}>
 
-        {/* 👉 NEW: The visual pill that makes it feel like an iOS/Android bottom sheet */}
         <div className="mobile-drag-handle"></div>
 
-        {/* The Sticky Header */}
         <div className="cat-modal-header">
           <h2>Explore Store</h2>
           <button className="btn-close-cat" onClick={onClose}>✕</button>
         </div>
 
-        {/* The Independently Scrolling Body */}
         <div className="cat-modal-body">
           {isLoading ? (
             <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
