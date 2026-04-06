@@ -1,94 +1,94 @@
 // src/components/layout/Footer.jsx
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext'; // 👉 NEW: Import Auth Context
+import {
+  FaFacebookF,
+  FaInstagram,
+  FaTwitter,
+  FaCcVisa,
+  FaCcMastercard,
+  FaCcPaypal,
+  FaCcAmazonPay
+} from 'react-icons/fa';
 import './Footer.css';
 
 const Footer = () => {
-  const [email, setEmail] = useState('');
+  const { user } = useAuth(); // 👉 NEW: Get user state
 
-  const handleSubscribe = (e) => {
-    e.preventDefault();
-    if(email) {
-      alert(`Thank you for subscribing with ${email}!`);
-      setEmail('');
-    }
+  // 👉 This ensures the page snaps to the top when a footer link is clicked
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
   };
 
+  // 👉 NEW: If the user is an Admin, do not render the footer at all
+  if (user?.role === 'ADMIN') {
+    return null;
+  }
+
   return (
-    <footer className="footer-section">
-      <div className="footer-top">
-        <div className="footer-container">
+    <footer className="site-footer">
+      <div className="footer-newsletter">
+        <div className="newsletter-content">
+          <h3>Join Our Kitchen Community</h3>
+          <p>Subscribe to get special offers, free giveaways, and once-in-a-lifetime deals.</p>
+        </div>
+        <form className="newsletter-form" onSubmit={(e) => e.preventDefault()}>
+          <input type="email" placeholder="Enter your email address" required />
+          <button type="submit">Subscribe</button>
+        </form>
+      </div>
 
-          {/* Column 1: Brand & Socials */}
-          <div className="footer-brand">
-            <h3>Utensil<span>Pro</span></h3>
-            <p>Your trusted neighborhood shop for premium quality kitchenware, professional cookware, and elegant dining accessories.</p>
-            <div className="social-links">
-              <a href="#" aria-label="Facebook">📘</a>
-              <a href="#" aria-label="Instagram">📸</a>
-              <a href="#" aria-label="Twitter">🐦</a>
-              <a href="#" aria-label="YouTube">▶️</a>
-            </div>
+      <div className="footer-main">
+        <div className="footer-col brand-col">
+          <h2>UtensilPro</h2>
+          <p>Your trusted neighborhood shop for premium quality kitchenware. We bring the best tools to your culinary adventures.</p>
+          <div className="social-links">
+            <a href="https://facebook.com" target="_blank" rel="noreferrer"><FaFacebookF /></a>
+            <a href="https://instagram.com" target="_blank" rel="noreferrer"><FaInstagram /></a>
+            <a href="https://twitter.com" target="_blank" rel="noreferrer"><FaTwitter /></a>
           </div>
+        </div>
 
-          {/* Column 2: Shop Links */}
-          <div className="footer-links">
-            <h4>Shop Categories</h4>
-            <ul>
-              <li><Link to="/shop?category=Cookware">Professional Cookware</Link></li>
-              <li><Link to="/shop?category=Serveware">Elegant Serveware</Link></li>
-              <li><Link to="/shop?category=Dining">Dining & Table</Link></li>
-              <li><Link to="/shop?category=Storage">Kitchen Storage</Link></li>
-              <li><Link to="/shop">View All Products</Link></li>
-            </ul>
-          </div>
+        <div className="footer-col">
+          <h4>Shop</h4>
+          <ul>
+            <li><Link to="/shop?category=cookware" onClick={scrollToTop}>Cookware</Link></li>
+            <li><Link to="/shop?category=serveware" onClick={scrollToTop}>Serveware</Link></li>
+            <li><Link to="/shop?category=Appliances" onClick={scrollToTop}>Appliances</Link></li>
+            <li><Link to="/shop" onClick={scrollToTop}>New Arrivals</Link></li>
+          </ul>
+        </div>
 
-          {/* Column 3: Customer Support */}
-          <div className="footer-links">
-            <h4>Customer Care</h4>
-            <ul>
-              <li><Link to="/contact">Contact Us</Link></li>
-              <li><Link to="/shipping">Shipping Policy</Link></li>
-              <li><Link to="/returns">Returns & Exchanges</Link></li>
-              <li><Link to="/faq">FAQs</Link></li>
-              <li><Link to="/track-order">Track Your Order</Link></li>
-            </ul>
-          </div>
+        <div className="footer-col">
+          <h4>Customer Service</h4>
+          <ul>
+            <li><Link to="/about" onClick={scrollToTop}>About Us</Link></li>
+            <li><Link to="/contact" onClick={scrollToTop}>Contact Us</Link></li>
+            <li><Link to="/shipping" onClick={scrollToTop}>Shipping Policy</Link></li>
+            <li><Link to="/returns" onClick={scrollToTop}>Returns & Exchanges</Link></li>
+            <li><Link to="/faq" onClick={scrollToTop}>FAQs</Link></li>
+          </ul>
+        </div>
 
-          {/* Column 4: Newsletter & Contact */}
-          <div className="footer-contact">
-            <h4>Stay Updated</h4>
-            <p className="newsletter-text">Subscribe to get special offers, free giveaways, and once-in-a-lifetime deals.</p>
-            <form className="newsletter-form" onSubmit={handleSubscribe}>
-              <input
-                type="email"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-              <button type="submit">Subscribe</button>
-            </form>
-
-            <div className="contact-info">
-              <p>📍 Market Yard, Pune, Maharashtra</p>
-              <p>📞 +91 98765 43210</p>
-              <p>✉️ support@utensilpro.com</p>
-            </div>
-          </div>
-
+        <div className="footer-col">
+          <h4>Store Info</h4>
+          <ul className="store-info-list">
+            <li>📍 Market Yard, Pune, 411037</li>
+            <li>📞 +91 98765 43210</li>
+            <li>✉️ support@utensilpro.com</li>
+            <li>🕒 Mon - Sun: 9:00 AM - 9:00 PM</li>
+          </ul>
         </div>
       </div>
 
       <div className="footer-bottom">
-        <div className="footer-bottom-container">
-          <p>&copy; {new Date().getFullYear()} UtensilPro. All rights reserved.</p>
-          <div className="payment-methods">
-            <span title="Visa">💳</span>
-            <span title="Mastercard">💳</span>
-            <span title="UPI">📱</span>
-            <span title="Cash on Delivery">💵</span>
-          </div>
+        <p>&copy; {new Date().getFullYear()} UtensilPro. All Rights Reserved.</p>
+        <div className="payment-icons">
+          <FaCcVisa />
+          <FaCcMastercard />
+          <FaCcPaypal />
+          <FaCcAmazonPay />
         </div>
       </div>
     </footer>

@@ -1,44 +1,117 @@
 /* src/components/layout/Footer.css */
 
-.footer-section {
-  background-color: #0f172a; /* Deep slate, matches admin/auth pages */
+.site-footer {
+  background-color: #0f172a; /* Dark Slate */
   color: #f8fafc;
-  margin-top: auto; /* Pushes footer to the bottom if page is short */
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin-top: auto; /* Pushes footer to bottom if page content is short */
 }
 
-.footer-top {
-  padding: 70px 0 50px 0;
-  border-bottom: 1px solid #1e293b;
+/* --- Newsletter Section --- */
+.footer-newsletter {
+  background-color: #1e293b;
+  padding: 40px 5%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+  border-bottom: 1px solid #334155;
 }
 
-.footer-container {
-  display: grid;
-  grid-template-columns: 1.5fr 1fr 1fr 1.5fr; /* Makes Brand & Contact slightly wider */
-  gap: 40px;
-  padding: 0 5%;
-  max-width: 1300px;
+.newsletter-content h3 {
+  margin: 0 0 8px 0;
+  font-size: 1.5rem;
+  color: #ffffff;
+}
+
+.newsletter-content p {
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 0.95rem;
+}
+
+.newsletter-form {
+  display: flex;
+  width: 100%;
+  max-width: 450px;
+}
+
+.newsletter-form input {
+  flex: 1;
+  padding: 12px 15px;
+  border: none;
+  border-radius: 8px 0 0 8px;
+  outline: none;
+  font-size: 0.95rem;
+}
+
+.newsletter-form button {
+  background-color: #d35400; /* Brand Orange */
+  color: white;
+  border: none;
+  padding: 12px 25px;
+  border-radius: 0 8px 8px 0;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.newsletter-form button:hover {
+  background-color: #c0392b;
+}
+
+/* --- Main Footer Grid --- */
+.footer-main {
+  max-width: 1200px;
   margin: 0 auto;
+  padding: 60px 5%;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1.5fr;
+  gap: 40px;
 }
 
-/* --- Brand Column --- */
-.footer-brand h3 {
-  font-size: 2rem;
+.footer-col h4 {
+  color: #ffffff;
+  font-size: 1.1rem;
+  margin: 0 0 20px 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.footer-col ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-col ul li {
+  margin-bottom: 12px;
+}
+
+.footer-col ul li a, .store-info-list li {
+  color: #94a3b8;
+  text-decoration: none;
+  font-size: 0.95rem;
+  transition: color 0.2s;
+}
+
+.footer-col ul li a:hover {
+  color: #3b82f6; /* Hover Blue */
+  text-decoration: none;
+}
+
+.brand-col h2 {
   margin: 0 0 15px 0;
-  font-weight: 800;
-  letter-spacing: -0.5px;
+  font-size: 2rem;
+  color: #ffffff;
 }
 
-.footer-brand span {
-  color: #3b82f6; /* Modern Blue */
-}
-
-.footer-brand p {
+.brand-col p {
   color: #94a3b8;
   line-height: 1.6;
   font-size: 0.95rem;
   margin-bottom: 20px;
-  max-width: 90%;
 }
 
 .social-links {
@@ -47,16 +120,16 @@
 }
 
 .social-links a {
-  text-decoration: none;
   background-color: #1e293b;
+  color: #ffffff;
   width: 40px;
   height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  font-size: 1.2rem;
-  transition: all 0.3s ease;
+  font-size: 1.1rem;
+  transition: all 0.2s;
 }
 
 .social-links a:hover {
@@ -64,152 +137,54 @@
   transform: translateY(-3px);
 }
 
-/* --- Links Columns --- */
-.footer-links h4, .footer-contact h4 {
-  font-size: 1.1rem;
-  margin: 0 0 20px 0;
-  color: #f8fafc;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.footer-links ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.footer-links li {
-  margin-bottom: 12px;
-}
-
-.footer-links a {
-  color: #94a3b8;
-  text-decoration: none;
-  font-size: 0.95rem;
-  transition: color 0.2s ease, padding-left 0.2s ease;
-  display: inline-block;
-}
-
-.footer-links a:hover {
-  color: #3b82f6;
-  padding-left: 5px; /* Slight right shift on hover */
-}
-
-/* --- Contact & Newsletter Column --- */
-.newsletter-text {
-  color: #94a3b8;
-  font-size: 0.9rem;
-  line-height: 1.5;
-  margin-bottom: 15px;
-}
-
-.newsletter-form {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 25px;
-}
-
-.newsletter-form input {
-  flex: 1;
-  padding: 12px 15px;
-  border: 1px solid #334155;
-  background-color: #1e293b;
-  color: white;
-  border-radius: 8px;
-  outline: none;
-  font-family: inherit;
-  font-size: 0.95rem;
-  transition: border-color 0.2s;
-}
-
-.newsletter-form input:focus {
-  border-color: #3b82f6;
-}
-
-.newsletter-form input::placeholder {
-  color: #64748b;
-}
-
-.newsletter-form button {
-  background-color: #3b82f6;
-  color: white;
-  border: none;
-  padding: 0 20px;
-  border-radius: 8px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.newsletter-form button:hover {
-  background-color: #2563eb;
-}
-
-.contact-info p {
-  color: #94a3b8;
-  margin: 0 0 10px 0;
-  font-size: 0.95rem;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
 /* --- Bottom Bar --- */
 .footer-bottom {
-  background-color: #020617; /* Even darker shade for the very bottom */
-  padding: 20px 0;
-}
-
-.footer-bottom-container {
+  background-color: #020617; /* Extra Dark */
+  padding: 20px 5%;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  max-width: 1300px;
-  margin: 0 auto;
-  padding: 0 5%;
+  flex-wrap: wrap;
+  gap: 15px;
 }
 
 .footer-bottom p {
+  margin: 0;
   color: #64748b;
   font-size: 0.9rem;
-  margin: 0;
 }
 
-.payment-methods {
+.payment-icons {
   display: flex;
-  gap: 15px;
-  font-size: 1.5rem;
-  color: #94a3b8;
+  gap: 12px;
+  font-size: 1.8rem;
+  color: #64748b;
 }
 
-/* =========================================
-   📱 MOBILE RESPONSIVENESS
-   ========================================= */
-@media (max-width: 1024px) {
-  .footer-container {
+/* --- Mobile Responsiveness --- */
+@media (max-width: 900px) {
+  .footer-main {
     grid-template-columns: 1fr 1fr; /* 2 columns on tablets */
   }
 }
 
-@media (max-width: 650px) {
-  .footer-container {
-    grid-template-columns: 1fr; /* 1 column on phones */
-    gap: 40px;
-  }
-
-  .footer-bottom-container {
+@media (max-width: 600px) {
+  .footer-newsletter {
     flex-direction: column;
-    gap: 15px;
     text-align: center;
   }
 
-  .newsletter-form {
-    flex-direction: column;
+  .footer-main {
+    grid-template-columns: 1fr; /* 1 column on phones */
+    text-align: center;
   }
 
-  .newsletter-form button {
-    padding: 12px;
+  .social-links {
+    justify-content: center;
+  }
+
+  .footer-bottom {
+    flex-direction: column;
+    text-align: center;
   }
 }

@@ -3,10 +3,13 @@ package com.ecommerce.utensils.controller;
 import com.ecommerce.utensils.model.User;
 import com.ecommerce.utensils.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.ecommerce.utensils.service.EmailService;
 
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
@@ -19,34 +22,69 @@ public class AuthController {
 
     @Autowired
     private UserRepository userRepository;
+
     // Temporary storage for OTPs (In production, use Redis with an expiration timer!)
     private final Map<String, String> otpCache = new ConcurrentHashMap<>();
     @Autowired
     private EmailService emailService;
-    // 1. ENDPOINT TO GENERATE & "SEND" OTP
-    @PostMapping("/send-otp")
-    public ResponseEntity<?> sendOtp(@RequestBody Map<String, String> request) {
-        String email = request.get("email");
+    private static class OtpDetails {
+        String otpCode;
+        LocalDateTime expiryTime;
 
-        if (userRepository.findByEmail(email).isPresent()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Email is already registered!"));
+        OtpDetails(String otpCode, LocalDateTime expiryTime) {
+            this.otpCode = otpCode;
+            this.expiryTime = expiryTime;
         }
-
-        // Generate a 6-digit OTP
-        String otp = String.format("%06d", new Random().nextInt(999999));
-        otpCache.put(email, otp);
-
-        try {
-            emailService.sendOtpEmail(email, otp);
-            System.out.println("✅ Real OTP Email successfully sent to: " + email);
-        } catch (Exception e) {
-            System.err.println("❌ Failed to send email: " + e.getMessage());
-            return ResponseEntity.status(500).body(Map.of("error", "Failed to send email. Check SMTP settings."));
-        }
-
-        return ResponseEntity.ok(Map.of("message", "OTP sent to " + email));
     }
 
+    // In-memory store for Guest OTPs
+    private final Map<String, AuthController.OtpDetails> otpStorage = new HashMap<>();
+
+    // 1. ENDPOINT TO GENERATE & "SEND" OTP
+//    @PostMapping("/send-otp")
+//    public ResponseEntity<?> sendOtp(@RequestBody Map<String, String> request) {
+//        String email = request.get("email");
+//
+//        if (userRepository.findByEmail(email).isPresent()) {
+//            return ResponseEntity.badRequest().body(Map.of("error", "Email is already registered!"));
+//        }
+//
+//        // Generate a 6-digit OTP
+//        String otp = String.format("%06d", new Random().nextInt(999999));
+//        otpCache.put(email, otp);
+//
+//        try {
+//            emailService.sendOtpEmail(email, otp);
+//            System.out.println("✅ Real OTP Email successfully sent to: " + email);
+//        } catch (Exception e) {
+//            System.err.println("❌ Failed to send email: " + e.getMessage());
+//            return ResponseEntity.status(500).body(Map.of("error", "Failed to send email. Check SMTP settings."));
+//        }
+//
+//        return ResponseEntity.ok(Map.of("message", "OTP sent to " + email));
+//    }
+    @PostMapping("/send-otp")
+    public ResponseEntity<?> verifyGuestOtp(@RequestParam String email, @RequestParam String otp) {
+        AuthController.OtpDetails storedOtpDetails = otpStorage.get(email);
+
+        if (storedOtpDetails == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "No OTP requested for this email."));
+        }
+
+        // 👉 NEW: Check if 10 minutes have passed
+        if (LocalDateTime.now().isAfter(storedOtpDetails.expiryTime)) {
+            otpStorage.remove(email); // Clean up expired OTP
+            return ResponseEntity.badRequest().body(Map.of("error", "OTP has expired. Please request a new one."));
+        }
+
+        // Check if OTP matches
+        if (storedOtpDetails.otpCode.equals(otp)) {
+            otpStorage.remove(email); // Clean up after success
+            return ResponseEntity.ok(Map.of("message", "Verified"));
+        }
+
+        return ResponseEntity.badRequest().body(Map.of("error", "Invalid OTP"));
+    }
     // 2. ENDPOINT TO VERIFY OTP & REGISTER USER
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody Map<String, String> requestData) {
@@ -76,19 +114,6 @@ public class AuthController {
 
         return ResponseEntity.ok(savedUser);
     }
-//    @PostMapping("/register")
-//    public ResponseEntity<?> registerUser(@RequestBody User user) {
-//        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
-//            return ResponseEntity.badRequest().body(Map.of("error", "Email is already registered!"));
-//        }
-//
-//        // Ensure new signups are always customers
-//        user.setRole("CUSTOMER");
-//        User savedUser = userRepository.save(user);
-//        savedUser.setPassword(null); // Don't send password back to React
-//
-//        return ResponseEntity.ok(savedUser);
-//    }
 
     @PostMapping("/login")
     public ResponseEntity<?> loginUser(@RequestBody Map<String, String> credentials) {

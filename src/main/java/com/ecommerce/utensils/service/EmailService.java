@@ -4,17 +4,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
-
+import org.springframework.beans.factory.annotation.Value;
 @Service
 public class EmailService {
 
     @Autowired
     private JavaMailSender mailSender;
+    @Value("${spring.mail.username}")
+    private String adminEmail;
 
     public void sendOtpEmail(String toEmail, String otp) {
         SimpleMailMessage message = new SimpleMailMessage();
 
-        message.setFrom("your.email@gmail.com"); // Must match the username in application.properties
+        message.setFrom(adminEmail); // Must match the username in application.properties
         message.setTo(toEmail);
         message.setSubject("Your UtensilPro Verification Code");
 

@@ -48,6 +48,9 @@
   font-weight: 600;
   font-size: 1rem;
   transition: color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
 .nav-item:hover {
@@ -63,11 +66,14 @@
 
 .cart-icon-wrapper {
   position: relative;
-  font-size: 1.5rem;
   color: #0f172a;
-  text-decoration: none;
   display: flex;
   align-items: center;
+  transition: transform 0.2s;
+}
+
+.cart-icon-wrapper:hover {
+  transform: scale(1.05);
 }
 
 .cart-badge {
@@ -101,141 +107,21 @@
   background-color: #1e293b;
 }
 
-/* --- Hamburger Menu (Mobile Only) --- */
+/* --- Hamburger Menu (Default Hidden on Desktop) --- */
 .mobile-menu-btn {
-  display: none;
+  display: none; /* Strictly hidden on desktop */
   background: none;
   border: none;
-  font-size: 1.8rem;
   color: #0f172a;
   cursor: pointer;
 }
 
-
 /* =========================================
-   2. MOBILE DRAWER
+   2. THE LEFT-SLIDING DRAWER
    ========================================= */
 .drawer-overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 100;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.3s ease;
-}
-
-.drawer-overlay.open {
-  opacity: 1;
-  visibility: visible;
-}
-
-.mobile-drawer {
-  position: fixed;
-  top: 0;
-  right: -300px; /* Hidden off-screen */
-  width: 280px;
-  height: 100vh;
-  background-color: white;
-  z-index: 101;
-  box-shadow: -5px 0 25px rgba(0,0,0,0.1);
-  display: flex;
-  flex-direction: column;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.mobile-drawer.open {
-  transform: translateX(-300px); /* Slide in */
-}
-
-.drawer-header {
-  padding: 20px;
-  border-bottom: 1px solid #e2e8f0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.btn-close-drawer {
-  background: #f1f5f9;
-  border: none;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  font-size: 1.2rem;
-  cursor: pointer;
-  color: #64748b;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.drawer-links {
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  flex: 1;
-}
-
-.drawer-item {
-  color: #0f172a;
-  text-decoration: none;
-  font-size: 1.2rem;
-  font-weight: 600;
-  padding: 12px 15px;
-  border-radius: 8px;
-  transition: background-color 0.2s;
-}
-
-.drawer-item:hover, .drawer-item:active {
-  background-color: #f8fafc;
-  color: #d35400;
-}
-
-.drawer-footer {
-  padding: 20px;
-  border-top: 1px solid #e2e8f0;
-}
-
-.btn-drawer-logout {
-  width: 100%;
-  padding: 15px;
-  background-color: #fee2e2;
-  color: #ef4444;
-  border: 1px solid #fca5a5;
-  border-radius: 8px;
-  font-weight: bold;
-  font-size: 1.1rem;
-  cursor: pointer;
-}
-
-
-/* =========================================
-   3. RESPONSIVE BREAKPOINTS
-   ========================================= */
-@media (max-width: 768px) {
-  .nav-links-desktop {
-    display: none; /* Hide normal links on mobile */
-  }
-
-  .btn-nav-login {
-    display: none; /* Hide login button, move to drawer */
-  }
-
-  .mobile-menu-btn {
-    display: block; /* Show hamburger icon */
-  }
-
-  /* Keep cart icon visible on mobile next to hamburger */
-  .nav-actions {
-    gap: 15px;
-  }
-}
-/* --- OVERLAY --- */
-.drawer-overlay {
-  position: fixed;
-  inset: 0; /* Covers the whole screen */
   background-color: rgba(15, 23, 42, 0.6);
   backdrop-filter: blur(2px);
   z-index: 900;
@@ -249,32 +135,26 @@
   visibility: visible;
 }
 
-/* --- THE LEFT-SLIDING DRAWER --- */
 .mobile-drawer {
   position: fixed;
   top: 0;
-  left: 0; /* Anchors the drawer to the LEFT side */
+  left: 0;
   bottom: 0;
   width: 280px;
-  max-width: 85vw; /* Prevents it from taking up the whole screen on tiny phones */
+  max-width: 85vw;
   background-color: white;
   z-index: 999;
-
-  /* Start hidden off-screen to the left */
   transform: translateX(-100%);
   transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-
   display: flex;
   flex-direction: column;
-  box-shadow: 5px 0 25px rgba(0, 0, 0, 0.15); /* Shadow on the right edge */
+  box-shadow: 5px 0 25px rgba(0, 0, 0, 0.15);
 }
 
-/* Slide it into view */
 .mobile-drawer.open {
   transform: translateX(0);
 }
 
-/* --- INTERIOR STYLING --- */
 .drawer-header {
   padding: 20px;
   display: flex;
@@ -288,7 +168,7 @@
   font-weight: 800;
   color: #0f172a;
 }
-.drawer-header .nav-brand span { color: #3b82f6; }
+.drawer-header .nav-brand span { color: #d35400; }
 
 .btn-close-drawer {
   background: none;
@@ -319,12 +199,12 @@
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   transition: color 0.2s;
 }
 
 .drawer-item:hover {
-  color: #3b82f6;
+  color: #d35400;
 }
 
 .drawer-footer {
@@ -343,8 +223,34 @@
   font-size: 1rem;
   cursor: pointer;
   transition: background-color 0.2s;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
 }
 
 .btn-drawer-logout:hover {
   background-color: #fee2e2;
+}
+
+/* =========================================
+   3. RESPONSIVE BREAKPOINTS
+   ========================================= */
+@media (max-width: 768px) {
+  /* Hide Desktop Elements */
+  .nav-links-desktop {
+    display: none;
+  }
+  .btn-nav-login {
+    display: none;
+  }
+
+  /* Reveal Mobile Elements */
+  .mobile-menu-btn {
+    display: flex;
+  }
+
+  .nav-actions {
+    gap: 15px;
+  }
 }
