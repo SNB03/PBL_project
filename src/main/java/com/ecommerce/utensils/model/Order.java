@@ -38,7 +38,8 @@ public class Order {
     private String paymentMethod;
     private BigDecimal deliveryFee;
 
-
+    // 👉 THE FIX: Add this line so Spring Boot saves the GST!
+    private BigDecimal taxAmount;
     @NotEmpty(message = "Order must contain at least one item")
     private List<OrderItem> itemsList;
 

@@ -21,7 +21,9 @@ public class CustomerOrderController {
     @PostMapping
     public ResponseEntity<Order> placeOrder(@RequestBody Order newOrder) {
         // Force the status to PENDING so the admin sees it in the Active Orders tab
-        newOrder.setStatus(OrderStatus.PENDING);
+        if (newOrder.getStatus() == null) {
+            newOrder.setStatus(OrderStatus.PENDING);
+        }
 
         // Generate a 4-digit Delivery Verification PIN
         String generatedPin = String.format("%04d", new java.util.Random().nextInt(10000));
