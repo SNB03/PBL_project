@@ -55,7 +55,7 @@ const Footer = () => {
           <ul>
             <li><Link to="/shop?category=cookware" onClick={scrollToTop}>Cookware</Link></li>
             <li><Link to="/shop?category=serveware" onClick={scrollToTop}>Serveware</Link></li>
-            <li><Link to="/shop?category=Appliances" onClick={scrollToTop}>Appliances</Link></li>
+
             <li><Link to="/shop" onClick={scrollToTop}>New Arrivals</Link></li>
           </ul>
         </div>

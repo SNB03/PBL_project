@@ -1,8 +1,9 @@
-# main.py
 from fastapi import FastAPI
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict
 from collections import Counter
+import math
+from datetime import datetime
 
 app = FastAPI()
 
@@ -13,94 +14,117 @@ class ProductInfo(BaseModel):
     season: str 
     price: float
     image: Optional[str] = "📦"
-    popularity: Optional[float] = 0.5 # 👉 NEW: Fallback to 0.5 if Spring Boot doesn't send it
+    popularity: Optional[float] = 0.5 
 
 class HomeRecommendationRequest(BaseModel):
     user_id: str
     past_purchases: List[str]
     recent_searches: List[str]
     current_month: int
+    weeks_to_next_festival: int = 4 # 👉 NEW: Crucial for the "Temporal" aspect
     catalog: List[ProductInfo] 
+
+# =====================================================================
+# THE FSDP KNOWLEDGE GRAPH (Cultural Event Calendar)
+# Represents Event Nodes and their Edge Weights to Product Categories
+# =====================================================================
+FSDP_GRAPH = {
+    "Diwali_Dhanteras": {
+        "active_months": [9, 10, 11],
+        "category_edges": {"Cookware": 0.9, "Serveware": 0.8, "Storage": 0.5}, # Edge Weights
+        "bulk_order_threshold": 0.75 # Used for predicting B2B surges
+    },
+    "Wedding_Season": {
+        "active_months": [4, 5, 11, 12],
+        "category_edges": {"Dinner Sets": 0.95, "Gift Combos": 0.9, "Cookware": 0.6},
+        "bulk_order_threshold": 0.80
+    },
+    "Summer_Prep": {
+        "active_months": [3, 4],
+        "category_edges": {"Water Bottles": 0.9, "Juice Dispensers": 0.85, "Storage": 0.6},
+        "bulk_order_threshold": 0.40
+    }
+}
 
 @app.post("/api/ai/home-recommend")
 def get_home_recommendations(req: HomeRecommendationRequest):
     scored_products = []
 
-    # 👉 NEW: Adjusted Weights to accommodate Popularity
-    W_BEHAVIOR = 0.35   # Personal history
-    W_SEARCH = 0.30     # Current intent
-    W_FSDP = 0.25       # Seasonality
-    W_POPULARITY = 0.10 # Tie-breaker / Global trending
+    # Identify Active Temporal Events (Event Nodes)
+    active_events = []
+    for event_name, data in FSDP_GRAPH.items():
+        if req.current_month in data["active_months"]:
+            active_events.append((event_name, data))
 
-    is_summer = req.current_month in [3, 4, 5, 6]
-    is_winter = req.current_month in [11, 12, 1, 2]
-    is_festive = req.current_month in [9, 10, 11]
-
-    # 1. BUILD BEHAVIOR PROFILE (Frequency-based affinity)
-    # Get categories of past purchases
+    # 1. BUILD USER BEHAVIOR NODE (Graph Personalization)
     purchased_categories = [p.category for p in req.catalog if p.id in req.past_purchases]
     total_purchases = len(purchased_categories)
-    
-    # Calculate category affinity (e.g., 3 Cookware / 4 Total = 0.75 Cookware Affinity)
     category_affinity = {}
     if total_purchases > 0:
         counts = Counter(purchased_categories)
         category_affinity = {cat: count / total_purchases for cat, count in counts.items()}
 
-    # Score every product
+    # 2. GRAPH TRAVERSAL & SCORING
     for product in req.catalog:
         
-        # --- A. BEHAVIOR SCORE (0.0 to 1.0) ---
-        # Instead of just 1 or 0, we use their affinity percentage for this category
+        # --- A. TEMPORAL GRAPH ACTIVATION (The "Temporal Network" part) ---
+        # Calculates how strongly an event propagates demand to this product
+        temporal_fsdp_score = 0.1 # Baseline graph node weight
+        bulk_likelihood = False
+        
+        for event_name, event_data in active_events:
+            # Check if an edge exists between this Event Node and Product Category
+            edge_weight = event_data["category_edges"].get(product.category, 0.0)
+            
+            if edge_weight > 0:
+                # Mathematical Temporal Decay: Demand spikes exponentially as weeks_to_next_festival -> 0
+                # Formula: Edge Weight * e^(-0.2 * weeks)
+                decay_factor = math.exp(-0.2 * req.weeks_to_next_festival)
+                activation_score = edge_weight * decay_factor
+                
+                temporal_fsdp_score = max(temporal_fsdp_score, activation_score)
+                
+                # Check bulk B2B/B2C predictive threshold
+                if activation_score >= event_data["bulk_order_threshold"]:
+                    bulk_likelihood = True
+
+        # --- B. USER-PRODUCT EDGE (Behavioral Scoring) ---
         behavior_score = category_affinity.get(product.category, 0.0)
 
-        # --- B. SEARCH SCORE (0.0 to 1.0 with Recency & Depth) ---
+        # --- C. INTENT EDGE (Search Scoring with Recency Decay) ---
         search_score = 0.0
-        # Reverse searches so the most recent search gets checked first/weighted highest
         for i, search_term in enumerate(reversed(req.recent_searches)):
             term = search_term.lower()
-            weight = 1.0 if i == 0 else 0.5 # Most recent search is worth 100%, older ones 50%
+            weight = 1.0 / (i + 1) # 1.0, 0.5, 0.33...
             
             if term in product.name.lower():
-                search_score += (1.0 * weight) # Direct name match is best
+                search_score += (1.0 * weight)
             elif term in product.category.lower():
-                search_score += (0.7 * weight) # Category match is good
+                search_score += (0.6 * weight)
                 
-        search_score = min(1.0, search_score) # Cap at 1.0
+        search_score = min(1.0, search_score)
 
-        # --- C. FSDP SCORE (Seasonality) ---
-        fsdp_score = 0.3 # Baseline for all items
-        if product.season == "All":
-            fsdp_score = 0.6 # Universally good items
-        elif (is_summer and product.season == "Summer") or \
-             (is_winter and product.season == "Winter") or \
-             (is_festive and product.season == "Festive"):
-            fsdp_score = 1.0 # Perfect seasonal match
-        else:
-            fsdp_score = 0.0 # Out of season completely
-
-        # --- D. POPULARITY SCORE ---
-        # Ensures that if two items tie on Behavior/Search, the better-selling one wins
+        # --- D. GLOBAL NODE POPULARITY ---
         pop_score = product.popularity
 
-        # --- FINAL MATH ---
-        total_score = (behavior_score * W_BEHAVIOR) + \
-                      (search_score * W_SEARCH) + \
-                      (fsdp_score * W_FSDP) + \
-                      (pop_score * W_POPULARITY)
+        # --- FSDP HYBRID ALGORITHM ---
+        # Weights dynamically shift. If an event is highly active (temporal_fsdp_score > 0.6), 
+        # the network prioritizes seasonality over past behavior.
+        if temporal_fsdp_score > 0.6:
+            total_score = (temporal_fsdp_score * 0.50) + (search_score * 0.20) + (behavior_score * 0.15) + (pop_score * 0.15)
+        else:
+            total_score = (behavior_score * 0.35) + (search_score * 0.30) + (temporal_fsdp_score * 0.20) + (pop_score * 0.15)
 
-        # Smart Tagline Generator based on dominant score
+        # Smart Tagline Generator
         tagline = "Recommended for You"
-        if search_score > 0.7:
+        if bulk_likelihood:
+            tagline = "🔥 High Festival Demand (Bulk Stock Available)"
+        elif search_score > 0.7:
             tagline = "Based on your recent search"
-        elif fsdp_score == 1.0 and behavior_score > 0.3:
-            tagline = f"Top {product.season} pick for your kitchen"
+        elif temporal_fsdp_score > 0.7:
+            tagline = f"Trending for Upcoming Festivals"
         elif behavior_score > 0.5:
             tagline = f"Because you love {product.category}"
-        elif fsdp_score == 1.0:
-            tagline = f"Trending this {product.season}"
-        elif pop_score > 0.8:
-            tagline = "Store Bestseller"
 
         scored_products.append({
             "id": product.id,
@@ -108,29 +132,32 @@ def get_home_recommendations(req: HomeRecommendationRequest):
             "category": product.category,
             "price": product.price,
             "img": product.image,
-            "score": round(total_score, 3), # Kept to 3 decimal places for ranking depth
+            "score": round(total_score, 3), 
             "tagline": tagline,
-            "fsdp_score": fsdp_score 
+            "fsdp_score": round(temporal_fsdp_score, 3),
+            "bulk_surge_predicted": bulk_likelihood # Answers your paper's B2B predictive claim!
         })
 
-    # Sort descending by precise total score
+    # Sort descending by precise total graph score
     scored_products.sort(key=lambda x: x["score"], reverse=True)
 
-    # 1. PERSONALIZED: Top 4 items (excluding already bought items)
+    # 1. PERSONALIZED
     personalized = [p for p in scored_products if p["id"] not in req.past_purchases][:4]
 
-    # 2. TRENDING BY CATEGORY: Exactly 1 top item per category based on FSDP + Popularity
+    # 2. EVENT-PROPAGATED (Trending by Category based heavily on FSDP Activation)
     trending_dict = {}
-    fsdp_sorted = sorted(scored_products, key=lambda x: (x["fsdp_score"] * 0.7) + (x["score"] * 0.3), reverse=True)
+    fsdp_sorted = sorted(scored_products, key=lambda x: x["fsdp_score"], reverse=True)
     
     for p in fsdp_sorted:
         cat = p["category"]
         if cat not in trending_dict:
             p_copy = dict(p)
-            p_copy["tagline"] = f"🔥 #1 Trending in {cat}"
+            # Override tagline if it's the absolute top item propagated by the event
+            if p_copy["fsdp_score"] > 0.6:
+                p_copy["tagline"] = f"🔥 #1 Festival Pick in {cat}"
             trending_dict[cat] = p_copy
 
-    trending_list = list(trending_dict.values())
+    trending_list = list(trending_dict.values())[:4]
 
     return {
         "personalized": personalized,

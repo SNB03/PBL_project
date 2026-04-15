@@ -49,7 +49,7 @@ const ActiveOrders = ({ orders, setOrders }) => {
     try {
       const res = await fetch(`http://localhost:8080/api/admin/orders/${orderId}/status?status=${newStatus}`, { method: 'PATCH' });
       if (res.ok) {
-        setOrders(orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+        setOrders(orders.map(o => (o.id === orderId) && newStatus!=="CANCELLED"? { ...o, status: newStatus } : o));
         showToast(`Order #${orderId.substring(0,6)} marked as ${formatEnum(newStatus)}`, "success");
       } else {
         showToast("Failed to update status.", "error");
@@ -193,7 +193,7 @@ const ActiveOrders = ({ orders, setOrders }) => {
               <tr><th>Order ID</th><th>Customer</th><th>Fulfillment</th><th>Status</th><th>Action / Assignment</th></tr>
             </thead>
             <tbody>
-              {orders.filter(o => o.status !== 'DELIVERED').map(order => (
+              {orders.filter(o => o.status !== 'DELIVERED' && o.status!=="CANCELLED").map(order => (
                 <React.Fragment key={order.id}>
 
                   {/* MAIN ROW */}

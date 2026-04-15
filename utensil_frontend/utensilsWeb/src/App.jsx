@@ -14,6 +14,7 @@ import Contact from './pages/Contact'
 import InfoPage from './pages/InfoPage';
 import TrackOrder from './pages/TrackOrder';
 import Invoice from './pages/Invoice';
+import DeliveryDashboard from './pages/DeliveryDashboard'
 // --- PAGE CONTENT CONFIGURATIONS ---
 
 const aboutContent = [
@@ -58,6 +59,7 @@ function App() {
                          <Route path="/faq" element={<InfoPage title="Frequently Asked Questions" sections={faqContent} />} />
         <Route path="/orders" element={<TrackOrder />} />
         <Route path="/invoice/:orderId" element={<Invoice />} />
+        <Route path="/delivery" element={<DeliveryDashboard/>}/>
         </Routes>
 
       </main>
